@@ -20,8 +20,8 @@ assert (calcsize(OFP_EXP_STATE_MOD_STATEFUL_TABLE_CONFIG_PACK_STR)== OFP_EXP_STA
 
 # struct ofp_exp_set_extractor
 MAX_FIELD_COUNT=6
-OFP_EXP_STATE_MOD_EXTRACTOR_PACK_STR='!B3xB3xI'
-OFP_EXP_STATE_MOD_EXTRACTOR_SIZE = 12
+OFP_EXP_STATE_MOD_EXTRACTOR_PACK_STR='!BB2xB3xI' # '!B3xB3xI' '!BB2xB3xI modifico il B2 e sfrutto un pad che cmq spreco' 
+OFP_EXP_STATE_MOD_EXTRACTOR_SIZE = 12   # lo lascio invariato, tanto ho sfruttato un pad
 assert (calcsize(OFP_EXP_STATE_MOD_EXTRACTOR_PACK_STR) == OFP_EXP_STATE_MOD_EXTRACTOR_SIZE)
 
 # struct ofp_exp_set_flow_state

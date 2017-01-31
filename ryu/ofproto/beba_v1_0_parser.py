@@ -270,15 +270,15 @@ def OFPExpMsgConfigureStatefulTable(datapath, stateful, table_id):
     exp_type=bebaproto.OFPT_EXP_STATE_MOD
     return ofproto_parser.OFPExperimenter(datapath=datapath, experimenter=0xBEBABEBA, exp_type=exp_type, data=data)
 
-def OFPExpMsgKeyExtract(datapath, command, fields, table_id,bit=0):
+def OFPExpMsgKeyExtract(datapath, command, fields, table_id, biflow=0, bit=0):
     field_count=len(fields)
 
     if field_count > bebaproto.MAX_FIELD_COUNT:
         field_count = 0
         LOG.debug("OFPExpMsgKeyExtract: Number of fields given > MAX_FIELD_COUNT")
 
-    data=struct.pack(bebaproto.OFP_EXP_STATE_MOD_PACK_STR, command)
-    data+=struct.pack(bebaproto.OFP_EXP_STATE_MOD_EXTRACTOR_PACK_STR,table_id,bit,field_count)
+    data=struct.pack(bebaproto.OFP_EXP_STATE_MOD_PACK_STR, command) # msg type
+    data+=struct.pack(bebaproto.OFP_EXP_STATE_MOD_EXTRACTOR_PACK_STR,table_id,biflow,bit,field_count)
     field_extract_format='!I'
 
     if field_count <= bebaproto.MAX_FIELD_COUNT:
