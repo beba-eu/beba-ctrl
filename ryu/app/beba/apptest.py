@@ -160,6 +160,16 @@ class OpenStateMacLearning(app_manager.RyuApp):
 			)
 		datapath.send_msg(req)
 
+		# aggiunta cosi tanto per fare un nuovo commit
+
+		# ''' HF[0] = OXM_OF_METADATA [id_pkt] '''
+		# req = bebaparser.OFPExpMsgHeaderFieldExtract(
+		# 		datapath=datapath,
+		# 		table_id=1,
+		# 		extractor_id=0,
+		# 		field=bebaproto.OXM_EXP_STATE
+		# 	)
+		# datapath.send_msg(req)
 
 
 		''' #######################  TAB 0 NULLA  serve solo per i bug di OpenFlow, servono 2 stage xke le modifiche MPLS siano visibili'''
