@@ -74,32 +74,32 @@ class OpenStateMacLearning(app_manager.RyuApp):
 		""" Set lookup extractor = {eth_dst} """
 		req = bebaparser.OFPExpMsgKeyExtract(datapath=datapath,
 				command=bebaproto.OFPSC_EXP_SET_L_EXTRACTOR,
-				fields=[ofproto.OXM_OF_IPV4_DST, ofproto.OXM_OF_ETH_DST],
+				fields=[ofproto.OXM_OF_ETH_SRC],
 				table_id=1)
 		datapath.send_msg(req)
 
 		""" Set update extractor = {eth_src}  """
 		req = bebaparser.OFPExpMsgKeyExtract(datapath=datapath,
 				command=bebaproto.OFPSC_EXP_SET_U_EXTRACTOR,
-				fields=[ofproto.OXM_OF_IPV4_DST,ofproto.OXM_OF_ETH_SRC],
+				fields=[ofproto.OXM_OF_ETH_SRC],
 				table_id=1)
 		datapath.send_msg(req)
 
 	########################### SET GD DATA VARIABLE ############################################
 
-		req = bebaparser.OFPExpMsgHeaderFieldExtract(
-				datapath=datapath,
-				table_id=0,
-				extractor_id=0,
-				field=ofproto.OXM_OF_IPV4_SRC
-			)
-		datapath.send_msg(req)
+		# req = bebaparser.OFPExpMsgHeaderFieldExtract(
+		# 		datapath=datapath,
+		# 		table_id=0,
+		# 		extractor_id=0,
+		# 		field=ofproto.OXM_OF_IPV4_SRC
+		# 	)
+		# datapath.send_msg(req)
 
 		req = bebaparser.OFPExpMsgsSetGlobalDataVariable(
 				datapath=datapath,
 				table_id=0,
 				global_data_variable_id=0,
-				value=11
+				value=313
 			)
 		datapath.send_msg(req)
 
@@ -127,8 +127,20 @@ class OpenStateMacLearning(app_manager.RyuApp):
 			)
 		datapath.send_msg(req)
 
+
+########################### SET GD DATA VARIABLE ############################################
+
+		req = bebaparser.OFPExpMsgsSetGlobalDataVariable(
+				datapath=datapath,
+				table_id=1,
+				global_data_variable_id=3,
+				value=55
+			)
+		datapath.send_msg(req)
+
 		########################### SET HF DATA VARIABLE TAB 1 ############################################
 		# SI PUO FARE???
+
 
 		# ''' HF[0] = OXM_OF_METADATA [id_pkt] '''
 		# req = bebaparser.OFPExpMsgHeaderFieldExtract(
@@ -139,6 +151,25 @@ class OpenStateMacLearning(app_manager.RyuApp):
 		# 	)
 		# datapath.send_msg(req)
 
+		''' HF[0] = OXM_OF_METADATA [id_pkt] '''
+		req = bebaparser.OFPExpMsgHeaderFieldExtract(
+				datapath=datapath,
+				table_id=1,
+				extractor_id=0,
+				field=bebaproto.OXM_EXP_STATE
+			)
+		datapath.send_msg(req)
+
+		# aggiunta cosi tanto per fare un nuovo commit
+
+		# ''' HF[0] = OXM_OF_METADATA [id_pkt] '''
+		# req = bebaparser.OFPExpMsgHeaderFieldExtract(
+		# 		datapath=datapath,
+		# 		table_id=1,
+		# 		extractor_id=0,
+		# 		field=bebaproto.OXM_EXP_STATE
+		# 	)
+		# datapath.send_msg(req)
 
 
 		''' #######################  TAB 0 NULLA  serve solo per i bug di OpenFlow, servono 2 stage xke le modifiche MPLS siano visibili'''
@@ -165,6 +196,8 @@ class OpenStateMacLearning(app_manager.RyuApp):
 
 		match = ofparser.OFPMatch()
 		actions = [bebaparser.OFPExpActionSetState(state=1, table_id=0),
+					# bebaparser.OFPExpActionSetDataVariable(table_id=0, opcode=bebaproto.OPCODE_SUM, output_fd_id=1, operand_1_hf_id=0, operand_2_cost=3)]
+					# bebaparser.OFPExpActionSetDataVariable(table_id=0, opcode=bebaproto.OPCODE_SUM, output_fd_id=2, operand_1_gd_id=0, operand_2_gd_id=2)]
 					bebaparser.OFPExpActionWriteContextToField(src_type=bebaproto.SOURCE_TYPE_GLOBAL_DATA_VAR,src_id=0,dst_field=ofproto.OXM_OF_METADATA)]
 		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions),
 				# ofparser.OFPInstructionWriteMetadata(metadata=13, metadata_mask=0xFFFFFFFF),
@@ -176,10 +209,21 @@ class OpenStateMacLearning(app_manager.RyuApp):
 
 		''' #######################  TAB 1   '''
 
-		match = ofparser.OFPMatch(metadata = 11)
+
+		match = ofparser.OFPMatch(state=2)
 		actions = [bebaparser.OFPExpActionSetState(state=2, table_id=1),
+					bebaparser.OFPExpActionSetDataVariable(table_id=1, opcode=bebaproto.OPCODE_SUM, output_fd_id=1, operand_1_hf_id=0, operand_2_cost=10),
 					ofparser.OFPActionOutput(ofproto.OFPP_FLOOD)]
 					# bebaparser.OFPExpActionSetDataVariable(table_id=1, opcode=bebaproto.OPCODE_SUM, output_gd_id=0, operand_1_gd_id=1, operand_2_cost=3)]
+		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions)]
+		mod = ofparser.OFPFlowMod(datapath=datapath, table_id=1,
+								priority=10, match=match, instructions=inst)
+		datapath.send_msg(mod)
+
+
+		match = ofparser.OFPMatch(metadata=313)
+		actions = [bebaparser.OFPExpActionSetState(state=2, table_id=1),
+					bebaparser.OFPExpActionSetDataVariable(table_id=1, opcode=bebaproto.OPCODE_SUM, output_gd_id=0, operand_1_gd_id=3, operand_2_cost=3)]
 		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions)]
 		mod = ofparser.OFPFlowMod(datapath=datapath, table_id=1,
 								priority=0, match=match, instructions=inst)
