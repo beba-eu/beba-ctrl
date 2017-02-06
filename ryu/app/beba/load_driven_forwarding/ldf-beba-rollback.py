@@ -531,9 +531,12 @@ class OpenStateEvolution(app_manager.RyuApp):
 			match2false = ofparser.OFPMatch(metadata=2, condition2=0, state=0) #dst=2, port 2
 
 		#if port 1 is better, set_state(1) and output 1
-		actions_true = [bebaparser.OFPExpActionSetState(state=1, table_id=3, idle_timeout=5), ofparser.OFPActionOutput(1)]
+		actions_true = [bebaparser.OFPExpActionSetState(state=1, table_id=3, idle_timeout=1, hard_timeout=5, hard_rollback=10), 
+						ofparser.OFPActionOutput(1)]
+						
 		#if port 2 is better, set_state(2) and output 2
-		actions_false = [bebaparser.OFPExpActionSetState(state=2, table_id=3, idle_timeout=5), ofparser.OFPActionOutput(2)]
+		actions_false = [bebaparser.OFPExpActionSetState(state=2, table_id=3, idle_timeout=1, hard_timeout=5,  hard_rollback=20), 
+						ofparser.OFPActionOutput(2)]
 
 		self.add_flow(datapath=datapath, table_id=3, priority=20, match=match1true,  actions=actions_true)
 		self.add_flow(datapath=datapath, table_id=3, priority=20, match=match2true,  actions=actions_true)
@@ -614,11 +617,20 @@ class OpenStateEvolution(app_manager.RyuApp):
 																		operand_1_gd_id=(2 if s==2 else 4), operand_2_cost=0)]
 				actions = actions_ewma + [ofparser.OFPActionOutput(s)]
 				self.add_flow(datapath=datapath, table_id=3, priority=30, match=match, actions=actions)
+
+				#long flow
+				match=ofparser.OFPMatch(in_port=3, state=s*10, metadata=metadata, condition4=1)
+				self.add_flow(datapath=datapath, table_id=3, priority=30, match=match, actions=actions)
+
 				# normal conditions
 				match = ofparser.OFPMatch(in_port=3, state=s, metadata=metadata, condition4=0)
 				actions_ewma_bg = [bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=2, operand_1_fd_id=2, operand_2_hf_id=2),
 							bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=5, operand_1_fd_id=5, operand_2_cost=1)]
 				actions = actions_ewma_bg + [ofparser.OFPActionOutput(s)]
+				self.add_flow(datapath=datapath, table_id=3, priority=30, match=match, actions=actions)
+
+				#long flow
+				match = ofparser.OFPMatch(in_port=3, state=s*10, metadata=metadata, condition4=0)
 				self.add_flow(datapath=datapath, table_id=3, priority=30, match=match, actions=actions)
 
 				########### match for extended states: same thing as in normal states but evaluate condition0 ##########
@@ -631,7 +643,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 				self.add_flow(datapath=datapath, table_id=3, priority=35, match=match, actions=actions)
 
 				############# condition[0] and [3] are verified, (i.e. big flow) change port ###########
-				match = ofparser.OFPMatch(in_port=3, state=s, condition0=1, condition3=1)
+				match = ofparser.OFPMatch(in_port=3, state=s*10, condition0=1, condition3=1)
 				actions = [bebaparser.OFPExpActionSetState(state=(1 if s==2 else 2)+(1<<5), table_id=3, idle_timeout=5),
 							ofparser.OFPActionOutput(1 if s==2 else 2)]
 				self.add_flow(datapath=datapath, table_id=3, priority=40, match=match, actions=actions)
