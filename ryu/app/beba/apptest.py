@@ -142,23 +142,23 @@ class OpenStateMacLearning(app_manager.RyuApp):
 		# SI PUO FARE???
 
 
-		# ''' HF[0] = OXM_OF_METADATA [id_pkt] '''
-		# req = bebaparser.OFPExpMsgHeaderFieldExtract(
-		# 		datapath=datapath,
-		# 		table_id=1,
-		# 		extractor_id=0,
-		# 		field=ofproto.OXM_OF_METADATA
-		# 	)
-		# datapath.send_msg(req)
-
 		''' HF[0] = OXM_OF_METADATA [id_pkt] '''
 		req = bebaparser.OFPExpMsgHeaderFieldExtract(
 				datapath=datapath,
 				table_id=1,
 				extractor_id=0,
-				field=bebaproto.OXM_EXP_STATE
+				field=ofproto.OXM_OF_METADATA
 			)
 		datapath.send_msg(req)
+
+		# ''' HF[0] = OXM_OF_METADATA [id_pkt] '''
+		# req = bebaparser.OFPExpMsgHeaderFieldExtract(
+		# 		datapath=datapath,
+		# 		table_id=1,
+		# 		extractor_id=0,
+		# 		field=bebaproto.OXM_EXP_STATE
+		# 	)
+		# datapath.send_msg(req)
 
 		# aggiunta cosi tanto per fare un nuovo commit
 
@@ -193,6 +193,7 @@ class OpenStateMacLearning(app_manager.RyuApp):
 		# 						priority=0, match=match, instructions=inst)
 		# datapath.send_msg(mod)
 
+		# match = ofparser.OFPMatch(eth_type=0x0800 ,ipv4_src=('10.0.0.0','255.255.255.0'))
 
 		match = ofparser.OFPMatch()
 		actions = [bebaparser.OFPExpActionSetState(state=1, table_id=0),
@@ -210,9 +211,9 @@ class OpenStateMacLearning(app_manager.RyuApp):
 		''' #######################  TAB 1   '''
 
 
-		match = ofparser.OFPMatch(state=2)
+		match = ofparser.OFPMatch()#state=2)
 		actions = [bebaparser.OFPExpActionSetState(state=2, table_id=1),
-					bebaparser.OFPExpActionSetDataVariable(table_id=1, opcode=bebaproto.OPCODE_SUM, output_fd_id=1, operand_1_hf_id=0, operand_2_cost=10),
+					bebaparser.OFPExpActionSetDataVariable(table_id=1, opcode=bebaproto.OPCODE_SUM, output_fd_id=1, operand_1_hf_id=0, operand_2_cost=1),
 					ofparser.OFPActionOutput(ofproto.OFPP_FLOOD)]
 					# bebaparser.OFPExpActionSetDataVariable(table_id=1, opcode=bebaproto.OPCODE_SUM, output_gd_id=0, operand_1_gd_id=1, operand_2_cost=3)]
 		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions)]
@@ -221,13 +222,13 @@ class OpenStateMacLearning(app_manager.RyuApp):
 		datapath.send_msg(mod)
 
 
-		match = ofparser.OFPMatch(metadata=313)
-		actions = [bebaparser.OFPExpActionSetState(state=2, table_id=1),
-					bebaparser.OFPExpActionSetDataVariable(table_id=1, opcode=bebaproto.OPCODE_SUM, output_gd_id=0, operand_1_gd_id=3, operand_2_cost=3)]
-		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions)]
-		mod = ofparser.OFPFlowMod(datapath=datapath, table_id=1,
-								priority=0, match=match, instructions=inst)
-		datapath.send_msg(mod)
+		# match = ofparser.OFPMatch(metadata=313)
+		# actions = [bebaparser.OFPExpActionSetState(state=2, table_id=1),
+		# 			bebaparser.OFPExpActionSetDataVariable(table_id=1, opcode=bebaproto.OPCODE_SUM, output_gd_id=0, operand_1_gd_id=3, operand_2_cost=3)]
+		# inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions)]
+		# mod = ofparser.OFPFlowMod(datapath=datapath, table_id=1,
+		# 						priority=0, match=match, instructions=inst)
+		# datapath.send_msg(mod)
 
 
 		# # for each input port, for each state
