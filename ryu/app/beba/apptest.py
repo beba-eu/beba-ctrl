@@ -31,6 +31,7 @@ class OpenStateMacLearning(app_manager.RyuApp):
 		datapath.send_msg(mod)
 
 	@set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
+
 	def switch_features_handler(self, event):
 
 		""" Switche sent his features, check if OpenState supported """
