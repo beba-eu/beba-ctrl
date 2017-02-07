@@ -15,7 +15,7 @@ Two directly connected switches plus a host for each switch:
      DMZ 8.0.0.0/24          eth2    eth3          LAN 10.0.0.0/24
             host1 ------------ switch1 ------------- host2 
                                   | eth1
-                                  |
+                                  | 1.0.0.1
                                   |                    
                                   |                     
                                host3 
@@ -53,12 +53,13 @@ class IPTablesTopo( Topo ):
 
 
         # Add links
+    #   hosts 3 and Switch 1
+        self.addLink( Host3 , switch1 )
     #   hosts 1 and Switch 1
         self.addLink( Host1 , switch1 )
     #   hosts 2 and Switch 1
         self.addLink( Host2 , switch1 )
-    #   hosts 3 and Switch 1
-        self.addLink( Host4 , switch1 )
+
                   
 
 topos = { 'iptables_topo': ( lambda: IPTablesTopo() ) }
