@@ -60,15 +60,21 @@ class OpenStateMacLearning(app_manager.RyuApp):
 		""" Set lookup extractor = {eth_dst} """
 		req = bebaparser.OFPExpMsgKeyExtract(datapath=datapath,
 				command=bebaproto.OFPSC_EXP_SET_L_EXTRACTOR,
-				fields=[ofproto.OXM_OF_IPV4_DST, ofproto.OXM_OF_ETH_DST],
-				table_id=0)
+				fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_IPV4_DST,
+						ofproto.OXM_OF_TCP_SRC, ofproto.OXM_OF_TCP_DST,
+						ofproto.OXM_OF_IP_PROTO],
+				table_id=0,
+				biflow = 1)
 		datapath.send_msg(req)
 
 		""" Set update extractor = {eth_src}  """
 		req = bebaparser.OFPExpMsgKeyExtract(datapath=datapath,
 				command=bebaproto.OFPSC_EXP_SET_U_EXTRACTOR,
-				fields=[ofproto.OXM_OF_IPV4_DST,ofproto.OXM_OF_ETH_SRC],
-				table_id=0)
+				fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_IPV4_DST,
+						ofproto.OXM_OF_TCP_SRC, ofproto.OXM_OF_TCP_DST,
+						ofproto.OXM_OF_IP_PROTO],
+				table_id=0,
+				biflow = 1)
 		datapath.send_msg(req)
 
 
@@ -108,7 +114,7 @@ class OpenStateMacLearning(app_manager.RyuApp):
 				datapath=datapath,
 				table_id=0,
 				global_data_variable_id=2,
-				value=22
+				value=0xa000002
 			)
 		datapath.send_msg(req)
 
@@ -200,7 +206,9 @@ class OpenStateMacLearning(app_manager.RyuApp):
 		actions = [bebaparser.OFPExpActionSetState(state=1, table_id=0),
 					# bebaparser.OFPExpActionSetDataVariable(table_id=0, opcode=bebaproto.OPCODE_SUM, output_fd_id=1, operand_1_hf_id=0, operand_2_cost=3)]
 					# bebaparser.OFPExpActionSetDataVariable(table_id=0, opcode=bebaproto.OPCODE_SUM, output_fd_id=2, operand_1_gd_id=0, operand_2_gd_id=2)]
+					bebaparser.OFPExpActionSetDataVariable(table_id=0, opcode=bebaproto.OPCODE_SUM, output_fd_id=0, operand_1_gd_id=2, operand_2_cost=0),
 					bebaparser.OFPExpActionWriteContextToField(src_type=bebaproto.SOURCE_TYPE_GLOBAL_DATA_VAR,src_id=0,dst_field=ofproto.OXM_OF_METADATA)]
+					# bebaparser.OFPExpActionWriteContextToField(src_type=bebaproto.SOURCE_TYPE_FLOW_DATA_VAR,src_id=0,dst_field=ofproto.OXM_OF_IPV4_DST)]
 		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions),
 				# ofparser.OFPInstructionWriteMetadata(metadata=13, metadata_mask=0xFFFFFFFF),
 				ofparser.OFPInstructionGotoTable(1)]
@@ -212,7 +220,7 @@ class OpenStateMacLearning(app_manager.RyuApp):
 		''' #######################  TAB 1   '''
 
 
-		match = ofparser.OFPMatch()#state=2)
+		match = ofparser.OFPMatch()#metadata = (1 , 0x000000001))
 		actions = [bebaparser.OFPExpActionSetState(state=2, table_id=1),
 					bebaparser.OFPExpActionSetDataVariable(table_id=1, opcode=bebaproto.OPCODE_SUM, output_fd_id=1, operand_1_hf_id=0, operand_2_cost=1),
 					ofparser.OFPActionOutput(ofproto.OFPP_FLOOD)]
