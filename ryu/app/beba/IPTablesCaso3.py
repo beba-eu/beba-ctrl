@@ -331,7 +331,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 		datapath.send_msg(mod)
 
 		# Line 13
-		match = ofparser.OFPMatch(state=0, in_port=INTERNET_PORT, eth_type=0x0800, ipv4_dst='10.0.0.1')
+		match = ofparser.OFPMatch(state=0, in_port=INTERNET_PORT, eth_type=0x0800, ipv4_dst='1.0.0.1')
 		actions = []
 		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
 			ofparser.OFPInstructionGotoTable(2)]
@@ -396,7 +396,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 		match = ofparser.OFPMatch(state=0, in_port=LAN_PORT, eth_type=0x0800)
 		actions = [bebaparser.OFPExpActionSetState(state=1, table_id=3),
 				   bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=1, operand_1_hf_id=0, operand_2_cost=0),
-				   ofparser.OFPActionSetField(ipv4_src="10.0.0.1"),
+				   ofparser.OFPActionSetField(ipv4_src="1.0.0.1"),
 				   bebaparser.OFPExpActionWriteContextToField(src_type=bebaproto.SOURCE_TYPE_FLOW_DATA_VAR,src_id=1,dst_field=ofproto.OXM_OF_TCP_SRC)]
 		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
 			ofparser.OFPInstructionGotoTable(4)]
@@ -409,7 +409,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 		# tcp.src = R1 => TCP_SRC = FD[1]
 		match = ofparser.OFPMatch(state=1, in_port=LAN_PORT, eth_type=0x0800)
 		actions = [bebaparser.OFPExpActionSetState(state=1, table_id=3),
-				   ofparser.OFPActionSetField(ipv4_src='10.0.0.1'),
+				   ofparser.OFPActionSetField(ipv4_src='1.0.0.1'),
 				   bebaparser.OFPExpActionWriteContextToField(src_type=bebaproto.SOURCE_TYPE_FLOW_DATA_VAR,src_id=1,dst_field=ofproto.OXM_OF_TCP_SRC)]
 		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
 			ofparser.OFPInstructionGotoTable(4)]
