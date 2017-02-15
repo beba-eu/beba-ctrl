@@ -193,7 +193,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 		datapath.send_msg(mod)
 
 
-		''' #######################  TAB 1 estrae la porta  ''' #controllare riga 0 FATTO
+		''' #######################  TAB 1 estrae la porta  ''' 
 		# NON MI INTERESSA PER QUESTO CASO D USO
 
 
@@ -201,11 +201,11 @@ class OpenStateEvolution(app_manager.RyuApp):
 		# NON MI INTERESSA PER QUESTO CASO D USO
 
 
-		''' #######################  TAB 3 translate ''' # Controllare Riga 3 PROBLEMA RIGA 0 e 1 di copiare
+		''' #######################  TAB 3 translate ''' 
 		# NON MI INTERESSA PER QUESTO CASO D USO
 
 
-		''' #######################  TAB 4 forward ''' # Controllare Riga 3 xke? mi sembra tutto ok
+		''' #######################  TAB 4 forward ''' 
 		
 		# Line 0
 		match = ofparser.OFPMatch(in_port=DMZ_PORT, metadata = (0 , 0x00000000F), eth_type=0x0800, ipv4_dst=('10.0.0.0','255.255.255.0'))
@@ -213,11 +213,6 @@ class OpenStateEvolution(app_manager.RyuApp):
 		self.add_flow(datapath=datapath, table_id=4, priority=100,
 						match=match, actions=actions)
 
-		# # Line 1
-		# match = ofparser.OFPMatch(in_port=DMZ_PORT, metadata = (1 , 0x00000000F), eth_type=0x0800, ipv4_dst=('10.0.0.0','255.255.255.0'))
-		# actions = [ofparser.OFPActionOutput(LAN_PORT)]
-		# self.add_flow(datapath=datapath, table_id=4, priority=99,
-		# 				match=match, actions=actions)
 
 		# Line 1 MOD Con modifca MAC
 		match = ofparser.OFPMatch(in_port=DMZ_PORT, metadata = (1 , 0x00000000F), eth_type=0x0800, ipv4_dst='10.0.0.2')
@@ -233,11 +228,6 @@ class OpenStateEvolution(app_manager.RyuApp):
 		self.add_flow(datapath=datapath, table_id=4, priority=99,
 						match=match, actions=actions)
 
-		# # Line 2
-		# match = ofparser.OFPMatch(eth_type=0x0800, ipv4_dst=('8.0.0.0','255.255.255.0'))
-		# actions = [ofparser.OFPActionOutput(DMZ_PORT)]
-		# self.add_flow(datapath=datapath, table_id=4, priority=98,
-		# 				match=match, actions=actions)
 
 		# Line 2 MOD Con modifca MAC
 		match = ofparser.OFPMatch(eth_type=0x0800, ipv4_dst='8.0.0.2')
@@ -246,11 +236,6 @@ class OpenStateEvolution(app_manager.RyuApp):
 		self.add_flow(datapath=datapath, table_id=4, priority=98,
 						match=match, actions=actions)
 
-		# # Line 3
-		# match = ofparser.OFPMatch(eth_type=0x0800, ipv4_dst=('10.0.0.0','255.255.255.0'))
-		# actions = [ofparser.OFPActionOutput(LAN_PORT)]
-		# self.add_flow(datapath=datapath, table_id=4, priority=97,
-		# 				match=match, actions=actions)
 
 		# Line 3 MOD Con modifica MAC BIS
 		match = ofparser.OFPMatch(eth_type=0x0800, ipv4_dst='10.0.0.2')

@@ -45,23 +45,23 @@ class OpenStateEvolution(app_manager.RyuApp):
 		if datapath.id == 2:
 			self.install_forward(datapath)
 		else:		
-			self.function_lan_dmz_isolation(datapath)
 			self.function_load_balancer(datapath)
-			self.function_dynamic_nat(datapath)
+
 
 
 	'''########################################################################################################################################################## 
 	############################################################################################################################################################# 
 	##########################################################                            ####################################################################### 
-	########################################################## FUNZIONE LAN/DMZ ISOLATION ####################################################################### 
+	##########################################################   FUNZIONE LOAD BALANCER   ####################################################################### 
 	##########################################################                            ####################################################################### 
 	##########################################################################################################################################################''' 
-	# NECESSARIE TAB 0, 4
-	# TAB 0, 4 CONFIGURATE IN QUESTA FUNZIONE
+	# NECESSARIE TAB 0, 3, 4
+	# TAB 3 CONFIGURATA IN QUESTA FUNZIONE
+	# AGGIUNTE REGOLE TAB 0, 4
 
+	def function_load_balancer(self, datapath):
 
-	def function_lan_dmz_isolation(self, datapath):
-
+		""" Tab0 """
 		""" Set table 0 as stateful """	
 		req = bebaparser.OFPExpMsgConfigureStatefulTable(
 				datapath=datapath,
@@ -69,7 +69,16 @@ class OpenStateEvolution(app_manager.RyuApp):
 				stateful=1)
 		datapath.send_msg(req)
 
+		""" Set table 3 translate """
+		req = bebaparser.OFPExpMsgConfigureStatefulTable(
+				datapath=datapath,
+				table_id=3,
+				stateful=1)
+		datapath.send_msg(req)
+
+
 	############################### LOOKUP/UPDATE ###################################
+
 		""" Tab0 """
 		""" Set lookup extractor = {BiFlow} """ 
 		req = bebaparser.OFPExpMsgKeyExtract(datapath=datapath,
@@ -89,8 +98,22 @@ class OpenStateEvolution(app_manager.RyuApp):
 				biflow = 1)
 		datapath.send_msg(req)
 
-		""" Tab4 """
-		""" Stateless """
+
+		""" Tab3 """
+		""" Set lookup extractor = {OXM_OF_IPV4_SRC, OXM_OF_TCP_SRC} """
+		req = bebaparser.OFPExpMsgKeyExtract(datapath=datapath,
+				command=bebaproto.OFPSC_EXP_SET_L_EXTRACTOR,
+				fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_TCP_SRC],
+				table_id=3)
+		datapath.send_msg(req)
+
+		""" Set update extractor = {OXM_OF_IPV4_SRC, OXM_OF_TCP_SRC} """
+		req = bebaparser.OFPExpMsgKeyExtract(datapath=datapath,
+				command=bebaproto.OFPSC_EXP_SET_U_EXTRACTOR,
+				fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_TCP_SRC],
+				table_id=3)
+		datapath.send_msg(req)
+
 
 		########################### SET GD DATA VARIABLE TAB 0 ############################################
 
@@ -110,211 +133,6 @@ class OpenStateEvolution(app_manager.RyuApp):
 				global_data_variable_id=0,
 				value=0)				
 		datapath.send_msg(req)
-
-
-
-		################################# REGOLE ############################################
-
-		# Line ARP
-		match = ofparser.OFPMatch(eth_type=0x0806)#metadata = (1 , 0x000000001))
-		actions = [ofparser.OFPActionOutput(ofproto.OFPP_FLOOD)]
-		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions)]
-		mod = ofparser.OFPFlowMod(datapath=datapath, table_id=0,
-								priority=100, match=match, instructions=inst)
-		datapath.send_msg(mod)
-
-
-		''' #######################  TAB 0  '''  # tutto ok, controllare 11 (sta nella funzione dopo)
-		# Line 0
-		match = ofparser.OFPMatch(state=0, in_port=DMZ_PORT, eth_type=0x0800, ipv4_dst=('10.0.0.0','255.255.255.0'))
-		actions = [bebaparser.OFPExpActionSetState(state=11, table_id=0)]
-		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
-			ofparser.OFPInstructionWriteMetadata(metadata=0, metadata_mask=0xFFFFFFFF),
-			ofparser.OFPInstructionGotoTable(4)]
-		mod = ofparser.OFPFlowMod(datapath=datapath, table_id=0,
-								priority=100, match=match, instructions=inst)
-		datapath.send_msg(mod)
-
-		# Line 1
-		match = ofparser.OFPMatch(state=0, in_port=LAN_PORT, eth_type=0x0800, ipv4_dst=('8.0.0.0','255.255.255.0'))
-		actions = [bebaparser.OFPExpActionSetState(state=12, table_id=0)]
-		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
-			ofparser.OFPInstructionWriteMetadata(metadata=0, metadata_mask=0xFFFFFFFF),
-			ofparser.OFPInstructionGotoTable(4)]
-		mod = ofparser.OFPFlowMod(datapath=datapath, table_id=0,
-								priority=99, match=match, instructions=inst)
-		datapath.send_msg(mod)
-
-		# Line 2
-		match = ofparser.OFPMatch(state=11, in_port=DMZ_PORT, eth_type=0x0800, ipv4_dst=('10.0.0.0','255.255.255.0'))
-		actions = []
-		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
-			ofparser.OFPInstructionWriteMetadata(metadata=0, metadata_mask=0xFFFFFFFF),
-			ofparser.OFPInstructionGotoTable(4)]
-		mod = ofparser.OFPFlowMod(datapath=datapath, table_id=0,
-								priority=98, match=match, instructions=inst)
-		datapath.send_msg(mod)
-
-		# Line 3
-		match = ofparser.OFPMatch(state=11, in_port=LAN_PORT, eth_type=0x0800, ipv4_dst=('8.0.0.0','255.255.255.0'))
-		actions = [bebaparser.OFPExpActionSetState(state=2, table_id=0)]
-		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
-			ofparser.OFPInstructionWriteMetadata(metadata=1, metadata_mask=0xFFFFFFFF),
-			ofparser.OFPInstructionGotoTable(4)]
-		mod = ofparser.OFPFlowMod(datapath=datapath, table_id=0,
-								priority=97, match=match, instructions=inst)
-		datapath.send_msg(mod)
-
-		# Line 4
-		match = ofparser.OFPMatch(state=12, in_port=LAN_PORT, eth_type=0x0800, ipv4_dst=('8.0.0.0','255.255.255.0'))
-		actions = []
-		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
-			ofparser.OFPInstructionWriteMetadata(metadata=0, metadata_mask=0xFFFFFFFF),
-			ofparser.OFPInstructionGotoTable(4)]
-		mod = ofparser.OFPFlowMod(datapath=datapath, table_id=0,
-								priority=96, match=match, instructions=inst)
-		datapath.send_msg(mod)
-
-		# Line 5
-		match = ofparser.OFPMatch(state=12, in_port=DMZ_PORT, eth_type=0x0800, ipv4_dst=('10.0.0.0','255.255.255.0'))
-		actions = [bebaparser.OFPExpActionSetState(state=2, table_id=0)]
-		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
-			ofparser.OFPInstructionWriteMetadata(metadata=1, metadata_mask=0xFFFFFFFF),
-			ofparser.OFPInstructionGotoTable(4)]
-		mod = ofparser.OFPFlowMod(datapath=datapath, table_id=0,
-								priority=95, match=match, instructions=inst)
-		datapath.send_msg(mod)
-
-		# Line 6
-		match = ofparser.OFPMatch(state=2)
-		actions = []
-		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions),
-			ofparser.OFPInstructionWriteMetadata(metadata=1, metadata_mask=0xFFFFFFFF),
-			ofparser.OFPInstructionGotoTable(4)]
-		mod = ofparser.OFPFlowMod(datapath=datapath, table_id=0,
-								priority=94, match=match, instructions=inst)
-		datapath.send_msg(mod)
-
-
-		''' #######################  TAB 1 estrae la porta  ''' #controllare riga 0 FATTO
-		# NON MI INTERESSA PER QUESTO CASO D USO
-
-
-		''' #######################  TAB 2 restore'''
-		# NON MI INTERESSA PER QUESTO CASO D USO
-
-
-		''' #######################  TAB 3 translate ''' # Controllare Riga 3 PROBLEMA RIGA 0 e 1 di copiare
-		# NON MI INTERESSA PER QUESTO CASO D USO
-
-
-		''' #######################  TAB 4 forward ''' # Controllare Riga 3 xke? mi sembra tutto ok
-		
-		# Line 0
-		match = ofparser.OFPMatch(in_port=DMZ_PORT, metadata = (0 , 0x00000000F), eth_type=0x0800, ipv4_dst=('10.0.0.0','255.255.255.0'))
-		actions = []
-		self.add_flow(datapath=datapath, table_id=4, priority=100,
-						match=match, actions=actions)
-
-		# # Line 1
-		# match = ofparser.OFPMatch(in_port=DMZ_PORT, metadata = (1 , 0x00000000F), eth_type=0x0800, ipv4_dst=('10.0.0.0','255.255.255.0'))
-		# actions = [ofparser.OFPActionOutput(LAN_PORT)]
-		# self.add_flow(datapath=datapath, table_id=4, priority=99,
-		# 				match=match, actions=actions)
-
-		# Line 1 MOD Con modifca MAC
-		match = ofparser.OFPMatch(in_port=DMZ_PORT, metadata = (1 , 0x00000000F), eth_type=0x0800, ipv4_dst='10.0.0.2')
-		actions = [ofparser.OFPActionSetField(eth_dst="00:00:00:00:00:03"),
-					ofparser.OFPActionOutput(LAN_PORT)]
-		self.add_flow(datapath=datapath, table_id=4, priority=99,
-						match=match, actions=actions)
-
-		# Line 1 BIS MOD Con modifca MAC
-		match = ofparser.OFPMatch(in_port=DMZ_PORT, metadata = (1 , 0x00000000F), eth_type=0x0800, ipv4_dst='10.0.0.3')
-		actions = [ofparser.OFPActionSetField(eth_dst="00:00:00:00:00:04"),
-					ofparser.OFPActionOutput(LAN_PORT)]
-		self.add_flow(datapath=datapath, table_id=4, priority=99,
-						match=match, actions=actions)
-
-		# # Line 2
-		# match = ofparser.OFPMatch(eth_type=0x0800, ipv4_dst=('8.0.0.0','255.255.255.0'))
-		# actions = [ofparser.OFPActionOutput(DMZ_PORT)]
-		# self.add_flow(datapath=datapath, table_id=4, priority=98,
-		# 				match=match, actions=actions)
-
-		# Line 2 MOD Con modifca MAC
-		match = ofparser.OFPMatch(eth_type=0x0800, ipv4_dst='8.0.0.2')
-		actions = [ofparser.OFPActionSetField(eth_dst="00:00:00:00:00:02"),
-					ofparser.OFPActionOutput(DMZ_PORT)]
-		self.add_flow(datapath=datapath, table_id=4, priority=98,
-						match=match, actions=actions)
-
-		# # Line 3
-		# match = ofparser.OFPMatch(eth_type=0x0800, ipv4_dst=('10.0.0.0','255.255.255.0'))
-		# actions = [ofparser.OFPActionOutput(LAN_PORT)]
-		# self.add_flow(datapath=datapath, table_id=4, priority=97,
-		# 				match=match, actions=actions)
-
-		# Line 3 MOD Con modifica MAC BIS
-		match = ofparser.OFPMatch(eth_type=0x0800, ipv4_dst='10.0.0.2')
-		actions = [ofparser.OFPActionSetField(eth_dst="00:00:00:00:00:03"),
-					ofparser.OFPActionOutput(LAN_PORT)]
-		self.add_flow(datapath=datapath, table_id=4, priority=97,
-						match=match, actions=actions)
-
-		# Line 3 BIS MOD Con modifica MAC BIS
-		match = ofparser.OFPMatch(eth_type=0x0800, ipv4_dst='10.0.0.3')
-		actions = [ofparser.OFPActionSetField(eth_dst="00:00:00:00:00:04"),
-					ofparser.OFPActionOutput(LAN_PORT)]
-		self.add_flow(datapath=datapath, table_id=4, priority=97,
-						match=match, actions=actions)
-
-
-
-	'''########################################################################################################################################################## 
-	############################################################################################################################################################# 
-	##########################################################                            ####################################################################### 
-	##########################################################   FUNZIONE LOAD BALANCER   ####################################################################### 
-	##########################################################                            ####################################################################### 
-	##########################################################################################################################################################''' 
-	# NECESSARIE TAB 0, 3, 4
-	# TAB 3 CONFIGURATA IN QUESTA FUNZIONE
-	# AGGIUNTE REGOLE TAB 0, 4
-
-	def function_load_balancer(self, datapath):
-
-		""" Tab0 """
-		""" Set lookup extractor = {BiFlow} """ 
-		# GIA CONFIGURATA
-
-
-		""" Set table 3 translate """
-		req = bebaparser.OFPExpMsgConfigureStatefulTable(
-				datapath=datapath,
-				table_id=3,
-				stateful=1)
-		datapath.send_msg(req)
-
-
-	############################### LOOKUP/UPDATE ###################################
-
-
-		""" Tab3 """
-		""" Set lookup extractor = {OXM_OF_IPV4_SRC, OXM_OF_TCP_SRC} """
-		req = bebaparser.OFPExpMsgKeyExtract(datapath=datapath,
-				command=bebaproto.OFPSC_EXP_SET_L_EXTRACTOR,
-				fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_TCP_SRC],
-				table_id=3)
-		datapath.send_msg(req)
-
-		""" Set update extractor = {OXM_OF_IPV4_SRC, OXM_OF_TCP_SRC} """
-		req = bebaparser.OFPExpMsgKeyExtract(datapath=datapath,
-				command=bebaproto.OFPSC_EXP_SET_U_EXTRACTOR,
-				fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_TCP_SRC],
-				table_id=3)
-		datapath.send_msg(req)
-
-
 
 		########################### SET GD E HF DATA VARIABLE TAB 3 ############################################
 
@@ -356,8 +174,16 @@ class OpenStateEvolution(app_manager.RyuApp):
 
 		################################# REGOLE ############################################
 
-
 		''' #######################  TAB 0  '''  # tutto ok, controllare 11
+
+		# Line ARP
+		match = ofparser.OFPMatch(eth_type=0x0806)#metadata = (1 , 0x000000001))
+		actions = [ofparser.OFPActionOutput(ofproto.OFPP_FLOOD)]
+		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions)]
+		mod = ofparser.OFPFlowMod(datapath=datapath, table_id=0,
+								priority=100, match=match, instructions=inst)
+		datapath.send_msg(mod)
+
 
 		# Line 7
 		match = ofparser.OFPMatch(state=0, in_port=INTERNET_PORT, eth_type=0x0800, ipv4_dst='1.0.0.1', ip_proto=6, tcp_dst=80)
@@ -400,7 +226,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 
 
 
-		''' #######################  TAB 3 translate ''' # Controllare Riga 3 PROBLEMA RIGA 0 e 1 di copiare
+		''' #######################  TAB 3 translate ''' 
 
 		# Line 0
 		# ip.dst = 10.0.0.2 
@@ -453,7 +279,30 @@ class OpenStateEvolution(app_manager.RyuApp):
 
 
 		''' #######################  TAB 4 forward '''
-		
+
+		# Line 2 MOD Con modifca MAC
+		match = ofparser.OFPMatch(eth_type=0x0800, ipv4_dst='8.0.0.2')
+		actions = [ofparser.OFPActionSetField(eth_dst="00:00:00:00:00:02"),
+					ofparser.OFPActionOutput(DMZ_PORT)]
+		self.add_flow(datapath=datapath, table_id=4, priority=98,
+						match=match, actions=actions)
+
+
+		# Line 3 MOD Con modifica MAC BIS
+		match = ofparser.OFPMatch(eth_type=0x0800, ipv4_dst='10.0.0.2')
+		actions = [ofparser.OFPActionSetField(eth_dst="00:00:00:00:00:03"),
+					ofparser.OFPActionOutput(LAN_PORT)]
+		self.add_flow(datapath=datapath, table_id=4, priority=97,
+						match=match, actions=actions)
+
+		# Line 3 BIS MOD Con modifica MAC BIS
+		match = ofparser.OFPMatch(eth_type=0x0800, ipv4_dst='10.0.0.3')
+		actions = [ofparser.OFPActionSetField(eth_dst="00:00:00:00:00:04"),
+					ofparser.OFPActionOutput(LAN_PORT)]
+		self.add_flow(datapath=datapath, table_id=4, priority=97,
+						match=match, actions=actions)
+
+
 		# Line 4
 		match = ofparser.OFPMatch(in_port=LAN_PORT, eth_type=0x0800, ipv4_src='10.0.0.2', ip_proto = 6, tcp_src=80)
 		actions = [ofparser.OFPActionSetField(ipv4_src='1.0.0.1'),
@@ -482,7 +331,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 
 	def install_forward(self, datapath):
 
-		match = ofparser.OFPMatch()#metadata = (1 , 0x000000001))
+		match = ofparser.OFPMatch()
 		actions = [ofparser.OFPActionOutput(ofproto.OFPP_FLOOD)]
 		inst = [ofparser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS,actions)]
 		mod = ofparser.OFPFlowMod(datapath=datapath, table_id=0,
