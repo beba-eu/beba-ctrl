@@ -438,7 +438,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 								priority=198, match=match, instructions=inst)
 		datapath.send_msg(mod)
 
-
+		''' Righe 3 e 4 possono essere unite'''
 		""" Riga 3 """
 
 		# C[0]: MPLS_TC <= COSTO MEMORIZZATO -> HF[1] <= FD[0]
@@ -735,8 +735,8 @@ class OpenStateEvolution(app_manager.RyuApp):
 				match=match,
 				actions=actions)
 
-
-
+		
+		''' Righe 2 e 3 possono essere unite '''
 		""" Riga 2 """
 
 		# C[0]: MPLS_TC <= COSTO MEMORIZZATO -> HF[1] <= FD[0]
@@ -972,7 +972,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 				actions=actions)
 
 
-
+		''' Righe 2 e 3 possono essere unite '''
 		""" Riga 2 """
 
 		# C[0]: MPLS_TC <= COSTO MEMORIZZATO -> HF[1] <= FD[0]
