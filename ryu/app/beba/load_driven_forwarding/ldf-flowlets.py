@@ -10,11 +10,16 @@ import ryu.ofproto.beba_v1_0_parser as bebaparser
 
 LOG = logging.getLogger('app.openstate.evolution')
 
+RTT = 60 # Tuning parameter for flowlet division
+
+PROBE_FREQ = 20
+AVG_SAMPLES = 20
+
 UPPER_PORTS = [1,2]
 DOWN_PORTS = [3]
 LEAVES = [1,2,3]
 HOSTS_NUMBER = 1
-MAC_ADDRS = ["00:00:00:00:00:01","00:00:00:00:00:02","00:00:00:00:00:03"]
+MAC_ADDRS = ["00:00:00:00:00:01","00:00:00:00:00:02","00:00:00:00:00:03"]	
 
 
 class OpenStateEvolution(app_manager.RyuApp):
@@ -48,13 +53,6 @@ class OpenStateEvolution(app_manager.RyuApp):
 
 
 	def install_leaves(self, datapath): 
-		#@@@@@@@@@@@@@@@@ PDV[0] contains the ewma that the switch sees at that port | needed at probing
-		#@@@@@@@@@@@@@@@@ PDV[1] contains the path cost to reach Leaf 1 | needed at routing
-		#@@@@@@@@@@@@@@@@ PDV[2] contains the path cost to reach Leaf 2 | needed at routing
-		#@@@@@@@@@@@@@@@@ PDV[3] contains the path cost to reach Leaf 3 | needed at routing
-
-		 
-
 		##################################### TABLE 0: DISPATCHING ##################################################
 
 		######################### TABLE 0 CONFIG ###############
@@ -99,7 +97,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 				datapath=datapath,
 				table_id=0,
 				global_data_variable_id=0,
-				value=9)
+				value=PROBE_FREQ)
 		datapath.send_msg(req)
 
 		""" Condition C0: if counter reaches counter_max, then trigger probe sending """ 
@@ -180,12 +178,12 @@ class OpenStateEvolution(app_manager.RyuApp):
 				instructions=instructions)
 			datapath.send_msg(mod)
 
-
+		# using low bitrate flows to refresh the estimates. For testing purposes only
 		for i in [0,1]:
 			match = ofparser.OFPMatch(in_port=3, eth_type=0x0800, ip_proto=6, tcp_dst=10000+i)
 			actions = [ofparser.OFPActionOutput(i+1)]
 			self.add_flow(datapath=datapath, table_id=0, priority=200, match=match, actions=actions)
-
+			
 			match = ofparser.OFPMatch(in_port=3, eth_type=0x0800, ip_proto=6, tcp_src=10000+i)
 			actions = [ofparser.OFPActionOutput(i+1)]
 			self.add_flow(datapath=datapath, table_id=0, priority=200, match=match, actions=actions)
@@ -194,39 +192,18 @@ class OpenStateEvolution(app_manager.RyuApp):
 		######################## TABLE 1 ToR DISCOVERY  #########################################################
 
 		# this cycle writes metadata specifying to which leaf belongs the packet
-
-		match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[0])
-		instructions = [ofparser.OFPInstructionWriteMetadata(metadata=1, metadata_mask=0xffffffff), 
-						ofparser.OFPInstructionGotoTable(3)]
-		mod = ofparser.OFPFlowMod(
-				datapath=datapath,
-				table_id=1,
-				priority=0,
-				match=match,
-				instructions=instructions)
-		datapath.send_msg(mod)
-
-		match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[1])
-		instructions = [ofparser.OFPInstructionWriteMetadata(metadata=2, metadata_mask=0xffffffff), 
-						ofparser.OFPInstructionGotoTable(3)]
-		mod = ofparser.OFPFlowMod(
-				datapath=datapath,
-				table_id=1,
-				priority=0,
-				match=match,
-				instructions=instructions)
-		datapath.send_msg(mod)
-
-		match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[2])
-		instructions = [ofparser.OFPInstructionWriteMetadata(metadata=3, metadata_mask=0xffffffff), 
-						ofparser.OFPInstructionGotoTable(3)]
-		mod = ofparser.OFPFlowMod(
-				datapath=datapath,
-				table_id=1,
-				priority=0,
-				match=match,
-				instructions=instructions)
-		datapath.send_msg(mod)
+		for i in LEAVES:
+			if (i != datapath.id):
+				match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[i-1])
+				instructions = [ofparser.OFPInstructionWriteMetadata(metadata=i, metadata_mask=0xffffffff), 
+								ofparser.OFPInstructionGotoTable(3)]
+				mod = ofparser.OFPFlowMod(
+						datapath=datapath,
+						table_id=1,
+						priority=0,
+						match=match,
+						instructions=instructions)
+				datapath.send_msg(mod)
 
 
 		######################### TABLE 2: ACTIVE PROBING ######################################################
@@ -265,7 +242,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 				datapath=datapath,
 				table_id=2,
 				global_data_variable_id=3,
-				value=40)				
+				value=AVG_SAMPLES)				
 		datapath.send_msg(req)
 
 		req = bebaparser.OFPExpMsgHeaderFieldExtract(
@@ -345,7 +322,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 			actions = [ofparser.OFPActionGroup(i), ofparser.OFPActionPopMpls(), ofparser.OFPActionOutput(3)]
 			self.add_flow(datapath=datapath, table_id=2, priority=100, match=match, actions=actions)
 
-
+			# using low bitrate flows to refresh the estimates. For testing purposes only 
 			for j in [0,1]:
 				match = ofparser.OFPMatch(in_port=i, eth_type=0x0800, ip_proto=6, tcp_dst=10000+j, condition0=1)
 				actions = actions_ewma_1 + [ofparser.OFPActionOutput(3)]
@@ -362,11 +339,6 @@ class OpenStateEvolution(app_manager.RyuApp):
 				match = ofparser.OFPMatch(in_port=i, eth_type=0x0800, ip_proto=6, tcp_src=10000+j, condition0=0)
 				actions = actions_ewma_2 + [ofparser.OFPActionOutput(3)]
 				self.add_flow(datapath=datapath, table_id=2, priority=150, match=match, actions=actions)
-
-		# if it matches something brutto lo butto
-		match = ofparser.OFPMatch()
-		actions = []
-		self.add_flow(datapath=datapath, priority=0, table_id=2, match=match, actions=actions)
 
 
 		######################## TABLE 3: FORWARDING ##############################################################
@@ -385,18 +357,16 @@ class OpenStateEvolution(app_manager.RyuApp):
 				stateful=1)
 		datapath.send_msg(req)
 
-		""" Set lookup extractor = {ETH_DST IP_PROTO TCP_DST} """
+		""" Set lookup extractor """
 		req = bebaparser.OFPExpMsgKeyExtract(datapath=datapath,
 				command=bebaproto.OFPSC_EXP_SET_L_EXTRACTOR,
-				#fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_IPV4_DST, ofproto.OXM_OF_IP_PROTO],
 				fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_IPV4_DST, ofproto.OXM_OF_TCP_SRC, ofproto.OXM_OF_TCP_DST],
 				table_id=3)
 		datapath.send_msg(req)
 
-		""" Set update extractor = {}  """
+		""" Set update extractor """
 		req = bebaparser.OFPExpMsgKeyExtract(datapath=datapath,
 				command=bebaproto.OFPSC_EXP_SET_U_EXTRACTOR,
-				#fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_IPV4_DST, ofproto.OXM_OF_IP_PROTO],
 				fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_IPV4_DST, ofproto.OXM_OF_TCP_SRC, ofproto.OXM_OF_TCP_DST],
 				table_id=3)
 		datapath.send_msg(req)
@@ -423,54 +393,14 @@ class OpenStateEvolution(app_manager.RyuApp):
 				field=bebaproto.OXM_EXP_PKT_LEN)
 		datapath.send_msg(req)
 
-		# GDV[0] = multiply factor
-		req = bebaparser.OFPExpMsgsSetGlobalDataVariable(
-				datapath=datapath,
-				table_id=3,
-				global_data_variable_id=0,
-				value=8000)				
-		datapath.send_msg(req)
-
-		# GDV[6] = packets needed for average
-		req = bebaparser.OFPExpMsgsSetGlobalDataVariable(
-				datapath=datapath,
-				table_id=3,
-				global_data_variable_id=6,
-				value=40-1)				
-		datapath.send_msg(req)
-
-		# GDV[5] = elephant flow threshold
-		req = bebaparser.OFPExpMsgsSetGlobalDataVariable(
-				datapath=datapath,
-				table_id=3,
-				global_data_variable_id=5,
-				value=2000) # 2000 kb/s	
-		datapath.send_msg(req)
-
-		# Lower flow threshold
-		req = bebaparser.OFPExpMsgsSetGlobalDataVariable(
-				datapath=datapath,
-				table_id=3,
-				global_data_variable_id=7,
-				value=300)				
-		datapath.send_msg(req)
-
-		for i in [1,2,3]:
-			req = bebaparser.OFPExpMsgsSetGlobalDataVariable(
-					datapath=datapath,
-					table_id=3,
-					global_data_variable_id=i,
-					value=0)				
-			datapath.send_msg(req)
-
 		#################################### TABLE 3 FLOWS ###################################
 
 		# many conditions as the number of LEAVES-1
 		# for i in LEAVES except datapath.id: create condition[i]
 
-		# in the case of 2 Spines. For more spines the configuration becomes more complex
+		# in case of 2 Spines
 		for destLeaf in [1,2]:
-			# C[destinationLeaf]: which port is less utilized? 
+			# C[destLeaf]: in which port there is less utilization for that destination? 
 			req = bebaparser.OFPExpMsgSetCondition(
 					datapath=datapath,
 					condition=bebaproto.CONDITION_LTE,
@@ -479,36 +409,6 @@ class OpenStateEvolution(app_manager.RyuApp):
 					operand_1_gd_id=destLeaf,
 					operand_2_gd_id=destLeaf+2)
 			datapath.send_msg(req)
-
-		# C[0], has the flow exceeded threshold? i.e. flow_rate >= threshold => FDV[3] >= GDV[5]
-		req = bebaparser.OFPExpMsgSetCondition(
-				datapath=datapath,
-				condition=bebaproto.CONDITION_GTE,
-				condition_id=0,
-				table_id=3,
-				operand_1_fd_id=3,
-				operand_2_gd_id=5)
-		datapath.send_msg(req)
-
-		# C[3], is the other flow lower than a value? FDV[4] < GDV[7] ?
-		req = bebaparser.OFPExpMsgSetCondition(
-				datapath=datapath,
-				condition=bebaproto.CONDITION_LTE,
-				condition_id=3,
-				table_id=3,
-				operand_1_fd_id=4,
-				operand_2_gd_id=7)
-		datapath.send_msg(req)
-
-		# C[4]: did the counter reach counterMax? FDV[5] = GDV[6] ?
-		req = bebaparser.OFPExpMsgSetCondition(
-				datapath=datapath,
-				condition=bebaproto.CONDITION_EQ,
-				condition_id=4,
-				table_id=3,
-				operand_1_fd_id=5,
-				operand_2_gd_id=6)
-		datapath.send_msg(req)
 
 		# leaf number dependent flows
 		if datapath.id==1:
@@ -531,11 +431,11 @@ class OpenStateEvolution(app_manager.RyuApp):
 			match2false = ofparser.OFPMatch(metadata=2, condition2=0, state=0) #dst=2, port 2
 
 		#if port 1 is better, set_state(1) and output 1
-		actions_true = [bebaparser.OFPExpActionSetState(state=1, table_id=3, idle_timeout=1, hard_timeout=5, hard_rollback=10), 
+		actions_true = [bebaparser.OFPExpActionSetState(state=1, table_id=3, idle_timeout=RTT), 
 						ofparser.OFPActionOutput(1)]
 						
 		#if port 2 is better, set_state(2) and output 2
-		actions_false = [bebaparser.OFPExpActionSetState(state=2, table_id=3, idle_timeout=1, hard_timeout=5,  hard_rollback=20), 
+		actions_false = [bebaparser.OFPExpActionSetState(state=2, table_id=3, idle_timeout=RTT), 
 						ofparser.OFPActionOutput(2)]
 
 		self.add_flow(datapath=datapath, table_id=3, priority=20, match=match1true,  actions=actions_true)
@@ -577,82 +477,14 @@ class OpenStateEvolution(app_manager.RyuApp):
 				self.add_flow(datapath=datapath, table_id=3, priority=200, match=match, actions=actions)
 
 		for s in UPPER_PORTS:
-			for metadata in LEAVES:
-				# normal conditions, installed flows continue flowing, calculates ewma if counter reaches max
-				match=ofparser.OFPMatch(in_port=3, state=s, metadata=metadata, condition4=1)
-				actions_ewma = [#calculates deltaT: FDV[1]=HF[1]-FDV[0]=TS_NOW - TS_LAST
-						bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUB, output_fd_id=1, operand_1_hf_id=1, operand_2_fd_id=0),
-						#calculates rate: R = (bytes / deltaT_us) * 1000 kB/s
-						bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_MUL, output_fd_id=2, operand_1_fd_id=2, operand_2_gd_id=0),
-						#stores the result in FDV[3]: THE FLOW ESTIMATED RATE
-						bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_DIV, output_fd_id=2, operand_1_fd_id=2, operand_2_fd_id=1),
-						#calculates ewma
-						bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_EWMA, output_fd_id=3, operand_1_fd_id=3, operand_2_fd_id=2, coeff_3=30),
-						#saves current timestamp
-						bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=0, operand_1_hf_id=1, operand_2_cost=0),
-						#counter returns to zero
-						bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUB, output_fd_id=5, operand_1_fd_id=5, operand_2_fd_id=5)]
-						
-				# FDV[4] = flow's alternative path utilization
-				if datapath.id==1:
-					if metadata==2:
-						actions_ewma += [bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=4, 
-																		operand_1_gd_id=(1 if s==2 else 3), operand_2_cost=0)]
-					elif metadata==3:
-						actions_ewma += [bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=4, 
-																		operand_1_gd_id=(2 if s==2 else 4), operand_2_cost=0)]
-				elif datapath.id==2:
-					if metadata==1:
-						actions_ewma += [bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=4, 
-																		operand_1_gd_id=(1 if s==2 else 3), operand_2_cost=0)]
-					elif metadata==3:
-						actions_ewma += [bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=4, 
-																		operand_1_gd_id=(2 if s==2 else 4), operand_2_cost=0)]
-				elif datapath.id==3:
-					if metadata==1:
-						actions_ewma += [bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=4, 
-																		operand_1_gd_id=(1 if s==2 else 3), operand_2_cost=0)]
-					elif metadata==2:
-						actions_ewma += [bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=4, 
-																		operand_1_gd_id=(2 if s==2 else 4), operand_2_cost=0)]
-				actions = actions_ewma + [ofparser.OFPActionOutput(s)]
-				self.add_flow(datapath=datapath, table_id=3, priority=30, match=match, actions=actions)
+		 	for metadata in LEAVES:
 
-				#long flow
-				match=ofparser.OFPMatch(in_port=3, state=s*10, metadata=metadata, condition4=1)
-				self.add_flow(datapath=datapath, table_id=3, priority=30, match=match, actions=actions)
-
-				# normal conditions
-				match = ofparser.OFPMatch(in_port=3, state=s, metadata=metadata, condition4=0)
-				actions_ewma_bg = [bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=2, operand_1_fd_id=2, operand_2_hf_id=2),
-							bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=5, operand_1_fd_id=5, operand_2_cost=1)]
-				actions = actions_ewma_bg + [ofparser.OFPActionOutput(s)]
-				self.add_flow(datapath=datapath, table_id=3, priority=30, match=match, actions=actions)
-
-				#long flow
-				match = ofparser.OFPMatch(in_port=3, state=s*10, metadata=metadata, condition4=0)
-				self.add_flow(datapath=datapath, table_id=3, priority=30, match=match, actions=actions)
-
-				########### match for extended states: same thing as in normal states but evaluate condition0 ##########
-				match = ofparser.OFPMatch(in_port=3, state=s+(1<<5), metadata=metadata, condition0=1, condition4=1)
-				actions = actions_ewma + [ofparser.OFPActionOutput(s)]
-				self.add_flow(datapath=datapath, table_id=3, priority=35, match=match, actions=actions)
-
-				match = ofparser.OFPMatch(in_port=3, state=s+(1<<5), metadata=metadata, condition0=1, condition4=0)
-				actions = actions_ewma_bg + [ofparser.OFPActionOutput(s)]
-				self.add_flow(datapath=datapath, table_id=3, priority=35, match=match, actions=actions)
-
-				############# condition[0] and [3] are verified, (i.e. big flow) change port ###########
-				match = ofparser.OFPMatch(in_port=3, state=s*10, condition0=1, condition3=1)
-				actions = [bebaparser.OFPExpActionSetState(state=(1 if s==2 else 2)+(1<<5), table_id=3, idle_timeout=5),
-							ofparser.OFPActionOutput(1 if s==2 else 2)]
-				self.add_flow(datapath=datapath, table_id=3, priority=40, match=match, actions=actions)
-
-				########### if the flow returns to a rate under the threshold #############################
-				match = ofparser.OFPMatch(in_port=3, state=s+(1<<5), condition0=0)
-				actions = [bebaparser.OFPExpActionSetState(state=s, table_id=3, idle_timeout=5),
-							ofparser.OFPActionOutput(s)]
-				self.add_flow(datapath=datapath, table_id=3, priority=50, match=match, actions=actions)
+		 		# normal conditions
+		 		match = ofparser.OFPMatch(in_port=3, state=s, metadata=metadata)#, condition4=0)
+		 		actions_ewma_bg = [bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=2, operand_1_fd_id=2, operand_2_hf_id=2),
+		 					bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=5, operand_1_fd_id=5, operand_2_cost=1)]
+		 		actions = actions_ewma_bg + [ofparser.OFPActionOutput(s)]
+		 		self.add_flow(datapath=datapath, table_id=3, priority=30, match=match, actions=actions)
 
 	###################### SPINES #################################################################################################
 
@@ -687,12 +519,12 @@ class OpenStateEvolution(app_manager.RyuApp):
 				value=8000)				
 		datapath.send_msg(req)
 
-		# multiply factor
+		# averaging points
 		req = bebaparser.OFPExpMsgsSetGlobalDataVariable(
 				datapath=datapath,
 				table_id=0,
 				global_data_variable_id=1,
-				value=40)				
+				value=AVG_SAMPLES)				
 		datapath.send_msg(req)
 
 		# mpls extractor
@@ -795,15 +627,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 
 
 		######################## TABLE 2: FORWARDING ################
-
-		match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[0])
-		actions = [ofparser.OFPActionOutput(1)]
-		self.add_flow(datapath=datapath, table_id=1, priority=0, match=match, actions=actions)
-		
-		match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[1])
-		actions = [ofparser.OFPActionOutput(2)]
-		self.add_flow(datapath=datapath, table_id=1, priority=0, match=match, actions=actions)
-		
-		match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[2])
-		actions = [ofparser.OFPActionOutput(3)]
-		self.add_flow(datapath=datapath, table_id=1, priority=0, match=match, actions=actions)
+		for i in LEAVES:
+			match = ofparser.OFPMatch(eth_dst=MAC_ADDRS[i-1])
+			actions = [ofparser.OFPActionOutput(i)]
+			self.add_flow(datapath=datapath, table_id=1, priority=0, match=match, actions=actions)
