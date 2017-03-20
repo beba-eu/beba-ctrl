@@ -34,7 +34,7 @@ def OFPExpActionSetState(state, table_id, bit=0, hard_timeout=0, idle_timeout=0,
         LOG.debug("OFPExpActionSetState: Number of fields given > MAX_FIELD_COUNT")
 
     act_type=bebaproto.OFPAT_EXP_SET_STATE
-    data=struct.pack(bebaproto.OFP_EXP_ACTION_SET_STATE_PACK_STR, act_type, state, state_mask, table_id, hard_rollback, idle_rollback, hard_timeout*1000000, idle_timeout*1000000, bit, field_count)
+    data=struct.pack(bebaproto.OFP_EXP_ACTION_SET_STATE_PACK_STR, act_type, state, state_mask, table_id, hard_rollback, idle_rollback, hard_timeout*1000, idle_timeout*1000, bit, field_count)
 
     field_extract_format='!I'
 
@@ -401,7 +401,7 @@ def OFPExpMsgSetFlowState(datapath, state, keys, table_id, idle_timeout=0, idle_
 
     command=bebaproto.OFPSC_EXP_SET_FLOW_STATE
     data=struct.pack(bebaproto.OFP_EXP_STATE_MOD_PACK_STR, command)
-    data+=struct.pack(bebaproto.OFP_EXP_STATE_MOD_SET_FLOW_STATE_PACK_STR, table_id, key_count, state, state_mask, hard_rollback, idle_rollback, hard_timeout*1000000, idle_timeout*1000000)
+    data+=struct.pack(bebaproto.OFP_EXP_STATE_MOD_SET_FLOW_STATE_PACK_STR, table_id, key_count, state, state_mask, hard_rollback, idle_rollback, hard_timeout*1000, idle_timeout*1000)
     field_extract_format='!B'
 
     if key_count <= bebaproto.MAX_KEY_LEN:
