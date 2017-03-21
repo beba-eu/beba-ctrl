@@ -194,39 +194,18 @@ class OpenStateEvolution(app_manager.RyuApp):
 		######################## TABLE 1 ToR DISCOVERY  #########################################################
 
 		# this cycle writes metadata specifying to which leaf belongs the packet
-
-		match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[0])
-		instructions = [ofparser.OFPInstructionWriteMetadata(metadata=1, metadata_mask=0xffffffff), 
-						ofparser.OFPInstructionGotoTable(3)]
-		mod = ofparser.OFPFlowMod(
-				datapath=datapath,
-				table_id=1,
-				priority=0,
-				match=match,
-				instructions=instructions)
-		datapath.send_msg(mod)
-
-		match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[1])
-		instructions = [ofparser.OFPInstructionWriteMetadata(metadata=2, metadata_mask=0xffffffff), 
-						ofparser.OFPInstructionGotoTable(3)]
-		mod = ofparser.OFPFlowMod(
-				datapath=datapath,
-				table_id=1,
-				priority=0,
-				match=match,
-				instructions=instructions)
-		datapath.send_msg(mod)
-
-		match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[2])
-		instructions = [ofparser.OFPInstructionWriteMetadata(metadata=3, metadata_mask=0xffffffff), 
-						ofparser.OFPInstructionGotoTable(3)]
-		mod = ofparser.OFPFlowMod(
-				datapath=datapath,
-				table_id=1,
-				priority=0,
-				match=match,
-				instructions=instructions)
-		datapath.send_msg(mod)
+		for i in LEAVES:
+			if (i != datapath.id):
+				match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[i-1])
+				instructions = [ofparser.OFPInstructionWriteMetadata(metadata=i, metadata_mask=0xffffffff), 
+								ofparser.OFPInstructionGotoTable(3)]
+				mod = ofparser.OFPFlowMod(
+						datapath=datapath,
+						table_id=1,
+						priority=0,
+						match=match,
+						instructions=instructions)
+				datapath.send_msg(mod)
 
 
 		######################### TABLE 2: ACTIVE PROBING ######################################################
@@ -363,11 +342,6 @@ class OpenStateEvolution(app_manager.RyuApp):
 				actions = actions_ewma_2 + [ofparser.OFPActionOutput(3)]
 				self.add_flow(datapath=datapath, table_id=2, priority=150, match=match, actions=actions)
 
-		# if it matches something brutto lo butto
-		match = ofparser.OFPMatch()
-		actions = []
-		self.add_flow(datapath=datapath, priority=0, table_id=2, match=match, actions=actions)
-
 
 		######################## TABLE 3: FORWARDING ##############################################################
 
@@ -388,7 +362,6 @@ class OpenStateEvolution(app_manager.RyuApp):
 		""" Set lookup extractor = {ETH_DST IP_PROTO TCP_DST} """
 		req = bebaparser.OFPExpMsgKeyExtract(datapath=datapath,
 				command=bebaproto.OFPSC_EXP_SET_L_EXTRACTOR,
-				#fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_IPV4_DST, ofproto.OXM_OF_IP_PROTO],
 				fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_IPV4_DST, ofproto.OXM_OF_TCP_SRC, ofproto.OXM_OF_TCP_DST],
 				table_id=3)
 		datapath.send_msg(req)
@@ -396,7 +369,6 @@ class OpenStateEvolution(app_manager.RyuApp):
 		""" Set update extractor = {}  """
 		req = bebaparser.OFPExpMsgKeyExtract(datapath=datapath,
 				command=bebaproto.OFPSC_EXP_SET_U_EXTRACTOR,
-				#fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_IPV4_DST, ofproto.OXM_OF_IP_PROTO],
 				fields=[ofproto.OXM_OF_IPV4_SRC, ofproto.OXM_OF_IPV4_DST, ofproto.OXM_OF_TCP_SRC, ofproto.OXM_OF_TCP_DST],
 				table_id=3)
 		datapath.send_msg(req)
@@ -784,14 +756,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 
 		######################## TABLE 2: FORWARDING ################
 
-		match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[0])
-		actions = [ofparser.OFPActionOutput(1)]
-		self.add_flow(datapath=datapath, table_id=1, priority=0, match=match, actions=actions)
-		
-		match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[1])
-		actions = [ofparser.OFPActionOutput(2)]
-		self.add_flow(datapath=datapath, table_id=1, priority=0, match=match, actions=actions)
-		
-		match=ofparser.OFPMatch(eth_dst=MAC_ADDRS[2])
-		actions = [ofparser.OFPActionOutput(3)]
-		self.add_flow(datapath=datapath, table_id=1, priority=0, match=match, actions=actions)
+		for i in LEAVES:
+			match = ofparser.OFPMatch(eth_dst=MAC_ADDRS[i-1])
+			actions = [ofparser.OFPActionOutput(i)]
+			self.add_flow(datapath=datapath, table_id=1, priority=0, match=match, actions=actions)
