@@ -5,7 +5,6 @@ from mininet.node import UserSwitch,RemoteController, OVSKernelSwitch
 from mininet.term import makeTerm
 import os, time, sys
 
-#LOG = logging.getLogger('app.openstate.ingressegress')
 
 """Custom topology example
 

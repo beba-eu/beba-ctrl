@@ -14,7 +14,7 @@ Two directly connected switches plus a host for each switch:
      DMZ 8.0.0.0/24          eth2    eth3          LAN 10.0.0.0/24
             host2 ------------ switch1 ---------- switch2 ------- host3 
                                   | eth1                \           10.0.0.2
-                                  | 1.0.0.10             \
+                                  | 1.0.0.1              \
                                   |                       \
                                   |                        \
                                host1                        host4
