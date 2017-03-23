@@ -1,3 +1,24 @@
+'''
+———> 1. LAN/DMZ isolation
+The firewall allows a host in the DMZ to communicate with a host in the LAN only if the latter initiated the communication.
+
+Step-by-step Simulation Startup
+1) Launch server load balancing controller application in Mininet by typing the following command:
+$ ryu-manager ~/beba-ctrl/ryu/app/beba/IPTablesCase1.py
+
+2) Start Mininet with a custom topology:
+$ sudo python start_mn_mytopo_IPTABLES
+
+3) Write inside the terminals of Mininet the following commands :
+$ xterm h2 h3
+
+4) Write inside the terminals of h2 the following commands :
+h2# nc -lvp 3000 
+
+5) Write inside the terminals of h3 the following commands :
+h3# nc -v 8.0.0.2 3000 
+
+'''
 import logging
 from ryu.base import app_manager
 from ryu.controller import ofp_event

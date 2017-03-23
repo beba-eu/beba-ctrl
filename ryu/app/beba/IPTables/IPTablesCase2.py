@@ -1,3 +1,34 @@
+'''
+———> 2. Load balancer
+Configure a load balancer function that assigns TCP connections to two web servers, in a round-robin fashion 
+
+Step-by-step Simulation Startup
+1) Launch server load balancing controller application in Mininet by typing the following command:
+$ ryu-manager ~/beba-ctrl/ryu/app/beba/IPTablesCase2.py
+
+2) Start Mininet with a custom topology:
+$ sudo python start_mn_mytopo_IPTABLES
+
+3) Write inside the terminals of Mininet the following commands :
+$ xterm h1 h3 h4
+
+4) Write inside the terminals of h3-h4 the following commands :
+h3# nc -lvp 80
+h4# nc -lvp 80
+
+5) Write inside the terminals of h1 the following commands :
+h1# nc -v 1.0.0.1 80
+
+First connection 	—> h4
+Second connection 	—> h3
+Third connection 	—> h4
+.
+.
+.
+
+'''
+
+
 import logging
 from ryu.base import app_manager
 from ryu.controller import ofp_event
