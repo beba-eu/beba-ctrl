@@ -1,5 +1,5 @@
 '''
-———> 1. LAN/DMZ isolation
+1. LAN/DMZ isolation
 The firewall allows a host in the DMZ to communicate with a host in the LAN only if the latter initiated the communication.
 
 Step-by-step Simulation Startup
@@ -19,7 +19,7 @@ h2# nc -lvp 3000
 h3# nc -v 8.0.0.2 3000 
 
 
-———> 2. Load balancer
+2. Load balancer
 Configure a load balancer function that assigns TCP connections to two web servers, in a round-robin fashion 
 
 Step-by-step Simulation Startup
@@ -39,14 +39,14 @@ h4# nc -lvp 80
 5) Write inside the terminals of h1 the following commands :
 h1# nc -v 1.0.0.1 80
 
-First connection 	—> h4
-Second connection 	—> h3
-Third connection 	—> h4
+First connection 	 h4
+Second connection 	 h3
+Third connection 	 h4
 .
 .
 .
 
-———> 3. Dynamic NAT
+3. Dynamic NAT
 Dynamic NAT between the LAN and the Internet, translating local source addresses into a public IP address, with a dynamically selected source port, and viceversa.
 
 Step-by-step Simulation Startup

@@ -1,5 +1,5 @@
 '''
-———> 2. Load balancer
+2. Load balancer
 Configure a load balancer function that assigns TCP connections to two web servers, in a round-robin fashion 
 
 Step-by-step Simulation Startup
@@ -19,9 +19,9 @@ h4# nc -lvp 80
 5) Write inside the terminals of h1 the following commands :
 h1# nc -v 1.0.0.1 80
 
-First connection 	—> h4
-Second connection 	—> h3
-Third connection 	—> h4
+First connection 	 h4
+Second connection 	 h3
+Third connection 	 h4
 .
 .
 .

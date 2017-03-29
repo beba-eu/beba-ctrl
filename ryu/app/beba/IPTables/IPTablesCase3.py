@@ -1,5 +1,5 @@
 '''
-———> 3. Dynamic NAT
+3. Dynamic NAT
 Dynamic NAT between the LAN and the Internet, translating local source addresses into a public IP address, with a dynamically selected source port, and viceversa.
 
 Step-by-step Simulation Startup

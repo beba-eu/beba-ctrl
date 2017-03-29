@@ -1,5 +1,5 @@
 '''
-———> 1. LAN/DMZ isolation
+1. LAN/DMZ isolation
 The firewall allows a host in the DMZ to communicate with a host in the LAN only if the latter initiated the communication.
 
 Step-by-step Simulation Startup
