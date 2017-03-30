@@ -537,7 +537,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 	def function_dynamic_nat(self, datapath):
 
 
-		""" Set table 1 as stateful, tabella degli stati usata per le porte libere"""	
+		""" Set table 1 as stateful """	
 		req = bebaparser.OFPExpMsgConfigureStatefulTable(
 				datapath=datapath,
 				table_id=1,
@@ -593,7 +593,6 @@ class OpenStateEvolution(app_manager.RyuApp):
 
 		########################### SET HF DATA VARIABLE TAB 1 ############################################
 
-		''' Da appoggio per salvare lo stato nei metadata'''
 		''' GD[0] = state_label''' 
 		req = bebaparser.OFPExpMsgsSetGlobalDataVariable(
 				datapath=datapath,

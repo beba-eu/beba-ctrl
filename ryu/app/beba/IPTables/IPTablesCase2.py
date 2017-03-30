@@ -174,7 +174,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 				value=0)				
 		datapath.send_msg(req)
 
-		''' GD[1] = LAN_DUE 10.0.0.2 in esadecimale''' 
+		''' GD[1] = LAN_DUE 10.0.0.2 hexadecimal''' 
 		req = bebaparser.OFPExpMsgsSetGlobalDataVariable(
 				datapath=datapath,
 				table_id=3,
@@ -182,7 +182,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 				value=0x0200000a)				
 		datapath.send_msg(req)
 
-		''' GD[2] = LAN_TRE 10.0.0.3 in esadecimale''' 
+		''' GD[2] = LAN_TRE 10.0.0.3 hexadecimal''' 
 		req = bebaparser.OFPExpMsgsSetGlobalDataVariable(
 				datapath=datapath,
 				table_id=3,
