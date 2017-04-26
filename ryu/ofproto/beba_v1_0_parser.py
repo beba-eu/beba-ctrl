@@ -148,43 +148,40 @@ def OFPExpResetGlobalState(datapath):
     exp_type=bebaproto.OFPT_EXP_STATE_MOD
     return ofproto_parser.OFPExperimenter(datapath=datapath, experimenter=0xBEBABEBA, exp_type=exp_type, data=data)
 
-def OFPExpStateStatsMultipartRequest(datapath, table_id=ofproto.OFPTT_ALL, state=None, match=None):
-    flags = 0 # Zero or ``OFPMPF_REQ_MORE``
+def OFPExpStateStatsMultipartRequestBase(datapath, exp_type, table_id=ofproto.OFPTT_ALL, state=None, match=None):
+    flags = 0  # Zero or ``OFPMPF_REQ_MORE``
     get_from_state = 1
     if state is None:
         get_from_state = 0
         state = 0
-        
+
     if match is None:
         match = ofproto_parser.OFPMatch()
 
-    data=bytearray()
+    data = bytearray()
     msg_pack_into(bebaproto.OFP_STATE_STATS_REQUEST_0_PACK_STR, data, 0, table_id, get_from_state, state)
-    
-    offset=bebaproto.OFP_STATE_STATS_REQUEST_0_SIZE
+
+    offset = bebaproto.OFP_STATE_STATS_REQUEST_0_SIZE
     match.serialize(data, offset)
 
-    exp_type=bebaproto.OFPMP_EXP_STATE_STATS
-    return ofproto_parser.OFPExperimenterStatsRequest(datapath=datapath, flags=flags, experimenter=0xBEBABEBA, exp_type=exp_type, data=data)
+    return ofproto_parser.OFPExperimenterStatsRequest(datapath=datapath, flags=flags, experimenter=0xBEBABEBA,
+                                                      exp_type=exp_type, data=data)
+
+def OFPExpStateStatsMultipartRequest(datapath, table_id=ofproto.OFPTT_ALL, state=None, match=None):
+    return OFPExpStateStatsMultipartRequestBase(datapath=datapath, exp_type=bebaproto.OFPMP_EXP_STATE_STATS,
+                                                table_id=table_id, state=state, match=match)
 
 def OFPExpStateStatsMultipartRequestAndDelete(datapath, table_id=ofproto.OFPTT_ALL, state=None, match=None):
-    flags = 0 # Zero or ``OFPMPF_REQ_MORE``
-    get_from_state = 1
-    if state is None:
-        get_from_state = 0
-        state = 0
-        
-    if match is None:
-        match = ofproto_parser.OFPMatch()
+    return OFPExpStateStatsMultipartRequestBase(datapath=datapath, exp_type=bebaproto.OFPMP_EXP_STATE_STATS_AND_DELETE,
+                                                table_id=table_id, state=state, match=match)
 
-    data=bytearray()
-    msg_pack_into(bebaproto.OFP_STATE_STATS_REQUEST_0_PACK_STR, data, 0, table_id, get_from_state, state)
-    
-    offset=bebaproto.OFP_STATE_STATS_REQUEST_0_SIZE
-    match.serialize(data, offset)
+def OFPExpStateStatsMultipartRequestShort(datapath, table_id=ofproto.OFPTT_ALL, state=None, match=None):
+    return OFPExpStateStatsMultipartRequestBase(datapath=datapath, exp_type=bebaproto.OFPMP_EXP_STATE_STATS_SHORT,
+                                                table_id=table_id, state=state, match=match)
 
-    exp_type=bebaproto.OFPMP_EXP_STATE_STATS_AND_DELETE
-    return ofproto_parser.OFPExperimenterStatsRequest(datapath=datapath, flags=flags, experimenter=0xBEBABEBA, exp_type=exp_type, data=data)
+def OFPExpStateStatsMultipartRequestAndDeleteShort(datapath, table_id=ofproto.OFPTT_ALL, state=None, match=None):
+    return OFPExpStateStatsMultipartRequestBase(datapath=datapath, exp_type=bebaproto.OFPMP_EXP_STATE_STATS_AND_DELETE_SHORT,
+                                                table_id=table_id, state=state, match=match)
 
 """ 
 State Sync: Controller asks for flows in a specific state
@@ -369,6 +366,48 @@ class OFPStateStats(StringifyMixin):
             state_stats_list.append(state_stats)
 
         return state_stats_list
+
+
+class OFPStateStatsShort(StringifyMixin):
+    def __init__(self, table_id=None, dur_sec=None, dur_nsec=None, field_count=None, fields=None,
+                 entry=None, length=None, hard_rb=None, idle_rb=None, hard_to=None, idle_to=None):
+        super(OFPStateStatsShort, self).__init__()
+        self.length = 0
+        self.table_id = table_id
+        self.dur_sec = dur_sec
+        self.dur_nsec = dur_nsec
+        self.field_count = field_count
+        self.fields = fields
+        self.entry = entry
+        self.hard_to = hard_to
+        self.hard_rb = hard_rb
+        self.idle_to = idle_to
+        self.hard_rb = hard_rb
+
+    @classmethod
+    def parser(cls, msg, offset=0):
+        state_stats_list = []
+
+        buf = msg.body.data
+
+        while len(buf) - offset > 0:
+            state_stats = cls()
+
+            (state_stats.length, state_stats.table_id, state_stats.key_len, state_stats.state) = struct.unpack_from(
+                bebaproto.OFP_STATE_STATS_SHORT_PACK_STR, buf, offset)
+            offset += bebaproto.OFP_STATE_STATS_SHORT_SIZE
+
+            if state_stats.table_id not in msg.datapath.lookup_scope:
+                continue
+            state_stats.fields = msg.datapath.lookup_scope[state_stats.table_id]
+            state_stats.field_count = len(state_stats.fields)
+
+            state_stats.entry, offset = OFPStateEntry.parser(buf, offset, state_stats.key_len, state_stats.state)
+
+            state_stats_list.append(state_stats)
+
+        return state_stats_list
+
 
 class OFPGlobalStateStats(StringifyMixin):
     def __init__(self, global_state=None):
