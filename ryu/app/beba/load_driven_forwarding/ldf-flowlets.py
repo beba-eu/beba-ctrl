@@ -10,7 +10,7 @@ import ryu.ofproto.beba_v1_0_parser as bebaparser
 
 LOG = logging.getLogger('app.openstate.evolution')
 
-RTT = 60 # Tuning parameter for flowlet division
+RTT = 0.06 # Tuning parameter for flowlet division
 
 PROBE_FREQ = 20
 AVG_SAMPLES = 20
