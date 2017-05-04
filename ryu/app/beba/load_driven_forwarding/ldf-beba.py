@@ -285,7 +285,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 						#stores the result in FDV[3]: THE FLOW ESTIMATED RATE
 						bebaparser.OFPExpActionSetDataVariable(table_id=2, opcode=bebaproto.OPCODE_DIV, output_fd_id=2, operand_1_fd_id=2, operand_2_fd_id=1),
 						#calculates ewma
-						bebaparser.OFPExpActionSetDataVariable(table_id=2, opcode=bebaproto.OPCODE_EWMA, output_fd_id=3, operand_1_fd_id=3, operand_2_cost=ofproto.EWMA_PARAM_0250, operand_3_fd_id=2),
+						bebaparser.OFPExpActionSetDataVariable(table_id=2, opcode=bebaproto.OPCODE_EWMA, output_fd_id=3, operand_1_fd_id=3, operand_2_cost=bebaproto.EWMA_PARAM_0250, operand_3_fd_id=2),
 						#saves current timestamp
 						bebaparser.OFPExpActionSetDataVariable(table_id=2, opcode=bebaproto.OPCODE_SUM, output_fd_id=0, operand_1_hf_id=1, operand_2_cost=0),
 						#counter returns to zero
@@ -556,7 +556,7 @@ class OpenStateEvolution(app_manager.RyuApp):
 						#stores the result in FDV[3]: THE FLOW ESTIMATED RATE
 						bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_DIV, output_fd_id=2, operand_1_fd_id=2, operand_2_fd_id=1),
 						#calculates ewma
-						bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_EWMA, output_fd_id=3, operand_1_fd_id=3, operand_2_cost=ofproto.EWMA_PARAM_0250, operand_3_fd_id=2),
+						bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_EWMA, output_fd_id=3, operand_1_fd_id=3, operand_2_cost=bebaproto.EWMA_PARAM_0250, operand_3_fd_id=2),
 						#saves current timestamp
 						bebaparser.OFPExpActionSetDataVariable(table_id=3, opcode=bebaproto.OPCODE_SUM, output_fd_id=0, operand_1_hf_id=1, operand_2_cost=0),
 						#counter returns to zero
