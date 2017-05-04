@@ -48,13 +48,6 @@ class OpenStateEvolution(app_manager.RyuApp):
 
 
 	def install_leaves(self, datapath): 
-		#@@@@@@@@@@@@@@@@ PDV[0] contains the ewma that the switch sees at that port | needed at probing
-		#@@@@@@@@@@@@@@@@ PDV[1] contains the path cost to reach Leaf 1 | needed at routing
-		#@@@@@@@@@@@@@@@@ PDV[2] contains the path cost to reach Leaf 2 | needed at routing
-		#@@@@@@@@@@@@@@@@ PDV[3] contains the path cost to reach Leaf 3 | needed at routing
-
-		 
-
 		##################################### TABLE 0: DISPATCHING ##################################################
 
 		######################### TABLE 0 CONFIG ###############

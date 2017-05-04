@@ -81,7 +81,7 @@ class BebaEvolution(app_manager.RyuApp):
 				datapath=datapath,
 				table_id=0,
 				global_data_variable_id=0,
-				value=8000)				
+				value=8)				
 		datapath.send_msg(req)
 
 
