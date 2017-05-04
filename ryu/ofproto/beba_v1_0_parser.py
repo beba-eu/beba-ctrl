@@ -215,9 +215,6 @@ def OFPExpActionSetDataVariable(table_id, opcode, bit=0, output_gd_id=None, outp
         operand_types=operand_types | bebaproto.OPERAND_TYPE_GLOBAL_DATA_VAR<<7
         output=output_gd_id
 
-    if opcode==OPCODE_EWMA and operand_2_cost==None:
-        LOG.debug("OFPExpActionSetDataVariable, OPCODE_EWMA: requires operand_2_cost = EWMA_PARAM_****")
-
     if opcode==OPCODE_EWMA and ( operand_2_cost<0 or operand_2_cost>6 ):
         LOG.debug("OFPExpActionSetDataVariable, OPCODE_EWMA: requires 0 <= operand_2_cost <= 6")
     
