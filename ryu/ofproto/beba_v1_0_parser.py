@@ -500,6 +500,16 @@ def OFPExpGlobalStateStatsMultipartRequest(datapath):
     exp_type=bebaproto.OFPMP_EXP_GLOBAL_STATE_STATS
     return ofproto_parser.OFPExperimenterStatsRequest(datapath=datapath, flags=flags, experimenter=0xBEBABEBA, exp_type=exp_type, data=data)
 
+
+def OFPExpGlobalDataStatsMultipartRequest(datapath, table_id=0):
+    flags = 0 # Zero or ``OFPMPF_REQ_MORE``
+    data = bytearray()
+    msg_pack_into('!7xB', data, 0, table_id)
+    exp_type=bebaproto.OFPMP_EXP_GLOBAL_DATA_STATS
+    return ofproto_parser.OFPExperimenterStatsRequest(datapath=datapath, flags=flags, experimenter=0xBEBABEBA, exp_type=exp_type, data=data)
+
+
+
 def OFPErrorExperimenterMsg_handler(ev):
     msg = ev.msg
     LOG.debug('')
@@ -694,6 +704,26 @@ class OFPGlobalStateStats(StringifyMixin):
         (global_state_stats.global_state, ) = struct.unpack_from('!4xI', buf, offset)
 
         return global_state_stats
+
+
+class OFPGlobalDataStats(StringifyMixin):
+    def __init__(self, global_data=None):
+        super(OFPGlobalDataStats, self).__init__()
+        self.value = global_data
+
+    @classmethod
+    def parser(cls, buf,offset = 0):
+        global_data_list = []
+        for i in range(bebaproto.MAX_GLOBAL_DATA_VAR_NUM):
+            global_data = cls()
+            (global_data.value,) = struct.unpack_from('!I', buf, offset)
+            global_data_list.append(global_data)
+            offset += 4
+        return global_data_list
+        
+
+
+
 
 def get_field_string(field,key,key_count,offset):
     if field==ofproto.OXM_OF_IN_PORT:
