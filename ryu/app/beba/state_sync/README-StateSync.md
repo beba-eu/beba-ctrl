@@ -33,5 +33,9 @@ To run the examples:
     - Number of instructions
     - Implemented instructions (actions are not packed in the notification)
 
+6.  get_global_data_vars.py
+    Asks for the global data vars from table 0 of a switch and parses the response.
+    For each packet forwarded by the the switch the global_data_var 0 gets incremented by 1.
+
 - run mininet:
   sudo mn --topo single,4 --mac --switch user --controller remote
