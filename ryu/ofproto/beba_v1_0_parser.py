@@ -214,6 +214,9 @@ def OFPExpActionSetDataVariable(table_id, opcode, bit=0, output_gd_id=None, outp
             LOG.debug("OFPExpActionSetDataVariable: invalid global data variable ID")
         operand_types=operand_types | bebaproto.OPERAND_TYPE_GLOBAL_DATA_VAR<<7
         output=output_gd_id
+
+    if opcode==bebaproto.OPCODE_EWMA and ( operand_2_cost<0 or operand_2_cost>6 ):
+        LOG.debug("OFPExpActionSetDataVariable, OPCODE_EWMA: requires 0 <= operand_2_cost <= 6")
     
     data=struct.pack(bebaproto.OFP_EXP_ACTION_SET_DATA_VARIABLE_PACK_STR, act_type, operand_types, table_id, opcode, output, operand_1, operand_2, operand_3, operand_4, coeff_1, coeff_2, coeff_3, coeff_4, field_count, bit)
 
@@ -270,15 +273,15 @@ def OFPExpMsgConfigureStatefulTable(datapath, stateful, table_id):
     exp_type=bebaproto.OFPT_EXP_STATE_MOD
     return ofproto_parser.OFPExperimenter(datapath=datapath, experimenter=0xBEBABEBA, exp_type=exp_type, data=data)
 
-def OFPExpMsgKeyExtract(datapath, command, fields, table_id,bit=0):
+def OFPExpMsgKeyExtract(datapath, command, fields, table_id, biflow=0, bit=0):
     field_count=len(fields)
 
     if field_count > bebaproto.MAX_FIELD_COUNT:
         field_count = 0
         LOG.debug("OFPExpMsgKeyExtract: Number of fields given > MAX_FIELD_COUNT")
 
-    data=struct.pack(bebaproto.OFP_EXP_STATE_MOD_PACK_STR, command)
-    data+=struct.pack(bebaproto.OFP_EXP_STATE_MOD_EXTRACTOR_PACK_STR,table_id,bit,field_count)
+    data=struct.pack(bebaproto.OFP_EXP_STATE_MOD_PACK_STR, command) # msg type
+    data+=struct.pack(bebaproto.OFP_EXP_STATE_MOD_EXTRACTOR_PACK_STR,table_id,biflow,bit,field_count)
     field_extract_format='!I'
 
     if field_count <= bebaproto.MAX_FIELD_COUNT:

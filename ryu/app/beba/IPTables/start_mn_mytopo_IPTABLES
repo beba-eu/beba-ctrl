@@ -1,0 +1,109 @@
+from mininet.net import Mininet
+from mininet.topo import Topo,SingleSwitchTopo
+from mininet.cli import CLI
+from mininet.node import UserSwitch,RemoteController, OVSKernelSwitch
+from mininet.term import makeTerm
+import os, time, sys
+
+
+"""Custom topology example
+
+Two directly connected switches plus a host for each switch:
+
+                          8.0.0.1    10.0.0.1
+     DMZ 8.0.0.0/24          eth2    eth3          LAN 10.0.0.0/24
+            host2 ------------ switch1 ---------- switch2 ------- host3 
+                                  | eth1                \           10.0.0.2
+                                  | 1.0.0.1              \
+                                  |                       \
+                                  |                        \
+                               host1                        host4
+                            INTERNET                          10.0.0.3
+
+Adding the 'topos' dict with a key/value pair to generate our newly defined
+topology enables one to pass in '--topo=mytopo' from the command line.
+"""
+
+
+class IPTablesTopo( Topo ):
+    "Simple topology example."
+
+    def __init__( self, ovsk=False):
+        "Create custom topo."
+
+        # Initialize topology
+        Topo.__init__( self )
+
+        # Add hosts and switches
+    #   Hosts for the first switch
+        Host1 = self.addHost( 'h1', mac='00:00:00:00:00:01', ip='1.0.0.2')
+
+
+    #   Hosts for the first switch
+        Host2 = self.addHost( 'h2', mac='00:00:00:00:00:02', ip='8.0.0.2' )
+
+
+    #   Hosts for the first switch
+        Host3 = self.addHost( 'h3', mac='00:00:00:00:00:03', ip='10.0.0.2' )
+
+    #   Hosts for the first switch
+        Host4 = self.addHost( 'h4', mac='00:00:00:00:00:04', ip='10.0.0.3' )
+
+
+    #   Switches
+        switch1 = self.addSwitch( 's1' )
+    #   Switches
+        switch2 = self.addSwitch( 's2' )
+
+
+        # Add links
+    #   hosts 1 and Switch 1
+        self.addLink( Host1 , switch1 )
+
+    #   hosts 2 and Switch 1
+        self.addLink( Host2 , switch1 )
+
+    #   Switch 2 and Switch 1
+        self.addLink( switch2 , switch1 )
+
+    #   hosts 3 and Switch 1
+        self.addLink( Host3 , switch2 )
+
+    #   hosts 2 and Switch 1
+        self.addLink( Host4 , switch2 )        
+                  
+
+topos = { 'iptables_topo': ( lambda: IPTablesTopo() ) }
+
+net = Mininet(topo=IPTablesTopo(),switch=UserSwitch,controller=RemoteController,cleanup=True,autoSetMacs=True,autoStaticArp=True,listenPort=6634)
+print 'Launching Mininet...'
+net.start()
+
+
+
+h1 = net.hosts[0]
+h2 = net.hosts[1]
+h3 = net.hosts[2]
+h4 = net.hosts[3]
+
+h1.cmd('ip r add default via 1.0.0.1')
+h2.cmd('ip r add default via 8.0.0.1')
+h3.cmd('ip r add default via 10.0.0.1')
+h4.cmd('ip r add default via 10.0.0.1')
+
+s1 = net.switches[0]
+
+s1.cmd('ifconfig s1-eth2 8.0.0.1')
+s1.cmd('ifconfig s1-eth3 10.0.0.1')
+
+s1.cmd('ip link set s1-eth1 address 00:00:00:00:00:10')
+s1.cmd('ip link set s1-eth2 address 00:00:00:00:00:20')
+s1.cmd('ip link set s1-eth3 address 00:00:00:00:00:30')
+
+h1.cmd('arp -s 1.0.0.1 00:00:00:00:00:10')
+
+
+
+CLI(net)
+net.stop()
+
