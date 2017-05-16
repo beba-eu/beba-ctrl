@@ -20,7 +20,6 @@ LOG.info("Support max %d ports per switch" % N)
 
 devices = []
 
-
 class OSMacLearning(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(OSMacLearning, self).__init__(*args, **kwargs)
@@ -81,16 +80,14 @@ class OSMacLearning(app_manager.RyuApp):
                     out_port = s
 
                 actions = [
+                    # for each packet forwarded by the switch global_data_vars[0]+=1
                     bebaparser.OFPExpActionSetDataVariable(table_id=0,
-					# for each packet forwarded by the switch global_data_vars[0]+=1
-														   opcode=bebaproto.OPCODE_SUM,
-														   output_gd_id=0,
-														   operand_1_gd_id=0,
-														   operand_2_cost=1),
+                                                           opcode=bebaproto.OPCODE_SUM,
+                                                           output_gd_id=0,
+                                                           operand_1_gd_id=0,
+                                                           operand_2_cost=1),
                     bebaparser.OFPExpActionSetState(state=i, table_id=0,hard_timeout=10),
-                    ofparser.OFPActionOutput(out_port)
-                ]
-
+                    ofparser.OFPActionOutput(out_port)]
                 self.add_flow(datapath=datapath, table_id=0, priority=0, match=match, actions=actions)
 
     # State Sync: parse respond message from switch
@@ -99,31 +96,28 @@ class OSMacLearning(app_manager.RyuApp):
         msg = event.msg
         reply = msg.body
         if (reply.experimenter == 0xBEBABEBA):
-			if (msg.body.exp_type == bebaproto.OFPMP_EXP_GLOBAL_DATA_STATS):
-				global_data_list = bebaparser.OFPGlobalDataStats.parser(msg.body.data)
-				for index, global_data in enumerate(global_data_list):
-					# Only global_data_vars[0] is interesting to print
-					if index == 0:
-						print("global data %d = %d" % (index,global_data.value))
-				print('*' * 42)
-
+            if msg.body.exp_type == bebaproto.OFPMP_EXP_GLOBAL_DATA_STATS:
+                global_data_list = bebaparser.OFPGlobalDataStats.parser(msg.body.data)
+                for index, global_data in enumerate(global_data_list):
+                    # Only global_data_vars[0] is interesting to print
+                    if index == 0:
+                        print("global data %d = %d" % (index,global_data.value))
+                print('*' * 42)
 
 import time
 from threading import Thread
 
-
 def ask_for_global_data_vars():
-	""" State Sync: Get the global_data_vars from the first switch"""
-	while True:
-		time.sleep(10)
-		if devices == []:
-			print("No connected device")
-		else:
-			# State Sync: Message that asks for the global data vars from table 0 of the first datapath element
-			msg = bebaparser.OFPExpGlobalDataStatsMultipartRequest(devices[0], table_id=0)
-			devices[0].send_msg(msg)
-			print("OFPExpGlobalDataStatsMultipartRequest sent")
-
+    """ State Sync: Get the global_data_vars from the first switch"""
+    while True:
+        time.sleep(10)
+        if devices == []:
+            print("No connected device")
+        else:
+            # State Sync: Message that asks for the global data vars from table 0 of the first datapath element
+            msg = bebaparser.OFPExpGlobalDataStatsMultipartRequest(devices[0], table_id=0)
+            devices[0].send_msg(msg)
+            print("OFPExpGlobalDataStatsMultipartRequest sent")
 
 t = Thread(target=ask_for_global_data_vars, args=())
 t.start()

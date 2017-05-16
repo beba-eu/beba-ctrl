@@ -499,16 +499,15 @@ def OFPExpGlobalStateStatsMultipartRequest(datapath):
     data=bytearray()
     exp_type=bebaproto.OFPMP_EXP_GLOBAL_STATE_STATS
     return ofproto_parser.OFPExperimenterStatsRequest(datapath=datapath, flags=flags, experimenter=0xBEBABEBA, exp_type=exp_type, data=data)
-
-
+""" 
+State Sync: This function returns the global data variables from the table "table_id" of a switch
+"""
 def OFPExpGlobalDataStatsMultipartRequest(datapath, table_id=0):
     flags = 0 # Zero or ``OFPMPF_REQ_MORE``
     data = bytearray()
     msg_pack_into('!7xB', data, 0, table_id)
     exp_type=bebaproto.OFPMP_EXP_GLOBAL_DATA_STATS
     return ofproto_parser.OFPExperimenterStatsRequest(datapath=datapath, flags=flags, experimenter=0xBEBABEBA, exp_type=exp_type, data=data)
-
-
 
 def OFPErrorExperimenterMsg_handler(ev):
     msg = ev.msg
@@ -705,7 +704,6 @@ class OFPGlobalStateStats(StringifyMixin):
 
         return global_state_stats
 
-
 class OFPGlobalDataStats(StringifyMixin):
     def __init__(self, global_data=None):
         super(OFPGlobalDataStats, self).__init__()
@@ -720,10 +718,6 @@ class OFPGlobalDataStats(StringifyMixin):
             global_data_list.append(global_data)
             offset += 4
         return global_data_list
-        
-
-
-
 
 def get_field_string(field,key,key_count,offset):
     if field==ofproto.OXM_OF_IN_PORT:
