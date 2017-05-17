@@ -16,6 +16,7 @@ from scapy.all import Ether, ARP
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import ether_types
+from beba import BebaSwitchDbg,BebaHost
 
 LOG = logging.getLogger('app.beba.pkttmp')
 
@@ -28,7 +29,7 @@ class BebaInSP(app_manager.RyuApp):
 		# Kill Mininet
 		os.system("sudo mn -c 2> /dev/null")
 		print 'Starting Mininet'
-		self.net = Mininet(topo=SingleSwitchTopo(2),switch=UserSwitch,controller=RemoteController,cleanup=True,autoSetMacs=True,listenPort=6634,autoStaticArp=False)
+		self.net = Mininet(topo=SingleSwitchTopo(2),switch=BebaSwitchDbg,host=BebaHost,controller=RemoteController,cleanup=True,autoSetMacs=True,listenPort=6634,autoStaticArp=False)
 		self.net.start()
 		self.test_id = 0
 

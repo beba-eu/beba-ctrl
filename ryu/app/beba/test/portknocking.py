@@ -5,6 +5,7 @@ from mininet.net import Mininet
 from mininet.topo import SingleSwitchTopo
 from mininet.node import UserSwitch,RemoteController
 from mininet.term import makeTerm
+from beba import BebaSwitchDbg,BebaHost
 
 if os.geteuid() != 0:
     exit("You need to have root privileges to run this script")
@@ -17,7 +18,7 @@ print 'Starting Ryu controller'
 os.system('ryu-manager ../portknock.py 2> /dev/null &')
 
 print 'Starting Mininet'
-net = Mininet(topo=SingleSwitchTopo(2),switch=UserSwitch,controller=RemoteController,cleanup=True,autoSetMacs=True,listenPort=6634)
+net = Mininet(topo=SingleSwitchTopo(2),switch=BebaSwitchDbg,host=BebaHost,controller=RemoteController,cleanup=True,autoSetMacs=True,listenPort=6634)
 net.start()
 
 time.sleep(5)

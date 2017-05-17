@@ -30,6 +30,7 @@ from mininet.node import UserSwitch,RemoteController
 import os,subprocess,time,sys
 from ryu.ofproto.ofproto_common import BEBA_EXPERIMENTER_ID
 import struct
+from beba import BebaSwitchDbg,BebaHost
 
 class BebaErrorExperimenterMsg(app_manager.RyuApp):
 
@@ -40,7 +41,7 @@ class BebaErrorExperimenterMsg(app_manager.RyuApp):
         # Kill Mininet
         os.system("sudo mn -c 2> /dev/null")
         print 'Starting Mininet'
-        self.net = Mininet(topo=SingleSwitchTopo(7),switch=UserSwitch,controller=RemoteController,cleanup=True,autoSetMacs=True,listenPort=6634,autoStaticArp=True)
+        self.net = Mininet(topo=SingleSwitchTopo(7),switch=BebaSwitchDbg,host=BebaHost,controller=RemoteController,cleanup=True,autoSetMacs=True,listenPort=6634,autoStaticArp=True)
         self.net.start()
         self.last_error_queue = []
         self.test_id = 0
@@ -818,5 +819,6 @@ class BebaErrorExperimenterMsg(app_manager.RyuApp):
     def restart_mininet(self):
         print 'Restarting Mininet\n'
         os.system("sudo mn -c 2> /dev/null")
-        self.net = Mininet(topo=SingleSwitchTopo(7),switch=UserSwitch,controller=RemoteController,cleanup=True,autoSetMacs=True,listenPort=6634,autoStaticArp=True)
+        self.net = Mininet(topo=SingleSwitchTopo(7),switch=BebaSwitchDbg,host=BebaHost,controller=RemoteController,cleanup=True,autoSetMacs=True,listenPort=6634,autoStaticArp=True)
         self.net.start()
+
