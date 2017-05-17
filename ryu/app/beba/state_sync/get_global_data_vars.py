@@ -98,10 +98,8 @@ class OSMacLearning(app_manager.RyuApp):
         if (reply.experimenter == 0xBEBABEBA):
             if msg.body.exp_type == bebaproto.OFPMP_EXP_GLOBAL_DATA_STATS:
                 global_data_list = bebaparser.OFPGlobalDataStats.parser(msg.body.data)
-                for index, global_data in enumerate(global_data_list):
-                    # Only global_data_vars[0] is interesting to print
-                    if index == 0:
-                        print("global data %d = %d" % (index,global_data.value))
+                # Only global_data_list[0] is interesting to print
+                print("global data variable %d = %d" % (0, global_data_list[0]))
                 print('*' * 42)
 
 import time
