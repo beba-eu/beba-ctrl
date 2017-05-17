@@ -715,7 +715,7 @@ class OFPGlobalDataStats(StringifyMixin):
         for i in range(bebaproto.MAX_GLOBAL_DATA_VAR_NUM):
             global_data = cls()
             (global_data.value,) = struct.unpack_from('!I', buf, offset)
-            global_data_list.append(global_data)
+            global_data_list.append(global_data.value)
             offset += 4
         return global_data_list
 
