@@ -98,6 +98,7 @@ class OSMacLearning(app_manager.RyuApp):
 					for state_entry in state_entry_list:
 						print 'State :',state_entry.entry.state
 						print 'Key   :',bebaparser.state_entry_key_to_str(state_entry)
+						print 'FDV   :', state_entry.entry.flow_data_var
 						print '*********'
 
 import time
