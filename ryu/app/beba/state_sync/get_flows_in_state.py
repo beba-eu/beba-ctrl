@@ -91,7 +91,7 @@ class OSMacLearning(app_manager.RyuApp):
 		
 		if (msg.body.experimenter == 0xBEBABEBA):
 			if(msg.body.exp_type == bebaproto.OFPMP_EXP_STATE_STATS):
-				state_entry_list = bebaparser.OFPStateStats.parser(msg.body.data)
+				state_entry_list = bebaparser.OFPStateStats.parser(msg)
 				if (state_entry_list==[]):
 					print "No key for this state"
 				else:

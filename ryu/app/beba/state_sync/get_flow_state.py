@@ -90,11 +90,11 @@ class OSMacLearning(app_manager.RyuApp):
 	@set_ev_cls(ofp_event.EventOFPExperimenterStatsReply, MAIN_DISPATCHER)
 	def packet_in_handler(self, event):
 		msg = event.msg
-		
+
 		# State Sync: Parse the response from the switch
 		if (msg.body.experimenter == 0xBEBABEBA):
 			if (msg.body.exp_type == bebaproto.OFPMP_EXP_STATE_STATS):
-				state_entry_list = bebaparser.OFPStateStats.parser(msg.body.data)
+				state_entry_list = bebaparser.OFPStateStats.parser(msg)
 				for state_entry in state_entry_list:
 					print 'State :',state_entry.entry.state
 					print 'Key   :',bebaparser.state_entry_key_to_str(state_entry)

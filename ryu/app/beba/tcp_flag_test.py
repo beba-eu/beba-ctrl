@@ -80,9 +80,8 @@ class TcpFlagTest(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPExperimenterStatsReply, MAIN_DISPATCHER)
     def state_stats_reply_handler(self, ev):
-       #Extract buffer 
-        buff = ev.msg.body.data
-        tmp_list = osparser.OFPStateStats.parser(buff,0)    
+       #Extract buffer
+        tmp_list = osparser.OFPStateStats.parser(ev.msg,0)
         for i in tmp_list:
             out_str = "----> ROUND: " + str(self.cnt) + " PAYLOAD:" + str(i) + " STATE: " + str(i.entry.state) + " KEY: " + str(i.entry.key) + "KEY_CNT: " + str(i.entry.key_count)
             LOG.info(out_str)

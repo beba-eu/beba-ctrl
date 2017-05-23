@@ -477,7 +477,7 @@ class SimpleMonitoring_1(selective_monitoring_1.BebaSelectiveMonitoring_1):
         if (msg.body.experimenter == 0XBEBABEBA):
             if (msg.body.exp_type == bebaproto.OFPMP_EXP_STATE_STATS_AND_DELETE):
                 data = msg.body.data
-                state_stats_list = bebaparser.OFPStateStats.parser(data, 0)
+                state_stats_list = bebaparser.OFPStateStats.parser(msg, 0)
                 if (state_stats_list != 0):
                     self.replies += 1
                     for index in range(len(state_stats_list)):
